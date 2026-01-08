@@ -11,36 +11,54 @@
    ============================================ */
 
 :root {
-  /* Primary brand colors */
-  --dflow-cyan: 174 100% 42%;
-  --dflow-teal: 168 84% 40%;
+  /* Primary brand colors - darker for light mode readability */
+  --dflow-cyan: 174 100% 30%;
+  --dflow-teal: 168 84% 32%;
+  --dflow-gold: 45 93% 40%;
+
+  /* Fumadocs primary override - darker for light mode */
+  --fd-primary: 174 100% 30%;
+
+  /* Light mode - Background layers */
+  --bg-deep: 210 20% 98%;
+  --bg-surface: 210 15% 96%;
+  --bg-elevated: 210 10% 94%;
+  --bg-hover: 210 10% 90%;
+
+  /* Light mode - Text hierarchy */
+  --text-primary: 222 47% 11%;
+  --text-secondary: 215 20% 40%;
+  --text-muted: 215 15% 55%;
+
+  /* Accent glow */
+  --glow-cyan: 0 0 40px hsla(174, 100%, 42%, 0.2);
+  --glow-gold: 0 0 30px hsla(45, 93%, 58%, 0.15);
+
+  /* Grid pattern */
+  --grid-color: hsla(215, 20%, 50%, 0.08);
+}
+
+.dark {
+  /* Primary brand colors - brighter for dark mode */
+  --dflow-cyan: 174 100% 50%;
+  --dflow-teal: 168 84% 45%;
   --dflow-gold: 45 93% 58%;
 
-  /* Fumadocs primary override */
-  --fd-primary: 174 100% 42%;
+  --fd-primary: 174 100% 50%;
 
-  /* Background layers */
+  /* Dark mode - Background layers */
   --bg-deep: 222 47% 6%;
   --bg-surface: 220 40% 9%;
   --bg-elevated: 218 35% 12%;
   --bg-hover: 216 30% 15%;
 
-  /* Text hierarchy */
+  /* Dark mode - Text hierarchy */
   --text-primary: 210 40% 96%;
   --text-secondary: 215 20% 65%;
   --text-muted: 215 15% 45%;
 
-  /* Accent glow */
-  --glow-cyan: 0 0 40px hsla(174, 100%, 42%, 0.3);
-  --glow-gold: 0 0 30px hsla(45, 93%, 58%, 0.2);
-
-  /* Grid pattern */
+  /* Dark mode - Grid pattern */
   --grid-color: hsla(215, 20%, 30%, 0.08);
-}
-
-.dark {
-  --fd-primary: 174 100% 50%;
-  --fd-background: var(--bg-deep);
 }
 
 /* ============================================
@@ -49,10 +67,14 @@
 
 body {
   font-family: 'Outfit', system-ui, sans-serif;
-  background: hsl(var(--bg-deep));
-  color: hsl(var(--text-primary));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Only apply custom background/text colors in dark mode for docs */
+.dark body {
+  background: hsl(var(--bg-deep));
+  color: hsl(var(--text-primary));
 }
 
 /* Code and monospace elements */
@@ -99,20 +121,10 @@ h1, h2, h3, h4, h5, h6 {
   margin: 1.5rem 0;
 }
 
-/* Sidebar styling */
-.fd-sidebar {
-  background: hsl(var(--bg-surface)) !important;
-  border-right: 1px solid hsl(var(--bg-elevated)) !important;
-}
-
 /* Navigation links */
 .fd-sidebar a {
   border-radius: 6px;
   transition: all 0.15s ease;
-}
-
-.fd-sidebar a:hover {
-  background: hsl(var(--bg-hover)) !important;
 }
 
 .fd-sidebar a[data-active="true"] {
@@ -121,28 +133,33 @@ h1, h2, h3, h4, h5, h6 {
   border-left: 2px solid hsl(var(--dflow-cyan));
 }
 
-/* ============================================
-   Fumadocs Overrides - Content
-   ============================================ */
-
-/* Main content area */
-.fd-page {
-  background: hsl(var(--bg-deep)) !important;
-}
-
-/* TOC styling */
-.fd-toc {
-  border-left: 1px solid hsl(var(--bg-elevated)) !important;
-}
-
-.fd-toc a {
-  color: hsl(var(--text-muted)) !important;
-  transition: color 0.15s ease;
-}
-
+/* TOC active link */
 .fd-toc a:hover,
 .fd-toc a[data-active="true"] {
   color: hsl(var(--dflow-cyan)) !important;
+}
+
+/* Dark mode specific Fumadocs overrides */
+.dark .fd-sidebar {
+  background: hsl(var(--bg-surface)) !important;
+  border-right: 1px solid hsl(var(--bg-elevated)) !important;
+}
+
+.dark .fd-sidebar a:hover {
+  background: hsl(var(--bg-hover)) !important;
+}
+
+.dark .fd-page {
+  background: hsl(var(--bg-deep)) !important;
+}
+
+.dark .fd-toc {
+  border-left: 1px solid hsl(var(--bg-elevated)) !important;
+}
+
+.dark .fd-toc a {
+  color: hsl(var(--text-muted)) !important;
+  transition: color 0.15s ease;
 }
 
 /* ============================================
@@ -398,8 +415,12 @@ tr:hover td {
    ============================================ */
 
 .fd-nav {
-  background: hsla(222, 47%, 6%, 0.85) !important;
   backdrop-filter: blur(16px) saturate(180%);
+}
+
+/* Dark mode nav styling */
+.dark .fd-nav {
+  background: hsla(222, 47%, 6%, 0.85) !important;
   border-bottom: 1px solid hsla(215, 20%, 30%, 0.2) !important;
 }
 
@@ -408,21 +429,21 @@ tr:hover td {
   position: relative;
 }
 
-/* Nav link styling */
-.fd-nav a[href] {
+/* Active nav link */
+.fd-nav a[data-active="true"] {
+  color: hsl(var(--dflow-cyan)) !important;
+}
+
+/* Dark mode nav link styling */
+.dark .fd-nav a[href] {
   font-size: 0.875rem;
   font-weight: 500;
   color: hsl(var(--text-secondary)) !important;
   transition: color 0.2s ease;
 }
 
-.fd-nav a[href]:hover {
+.dark .fd-nav a[href]:hover {
   color: hsl(var(--text-primary)) !important;
-}
-
-/* Active nav link */
-.fd-nav a[data-active="true"] {
-  color: hsl(var(--dflow-cyan)) !important;
 }
 
 /* GitHub icon styling */
