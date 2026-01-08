@@ -560,22 +560,43 @@ var DFlowWebSocket = class {
 var DFlowClient = class {
   metadataHttp;
   tradeHttp;
+  /** API for discovering and querying prediction events */
   events;
+  /** API for market data, pricing, and batch queries */
   markets;
+  /** API for orderbook snapshots */
   orderbook;
+  /** API for historical trade data */
   trades;
+  /** API for real-time milestone data */
   liveData;
+  /** API for series/category information */
   series;
+  /** API for tag-based filtering */
   tags;
+  /** API for sports-specific filters */
   sports;
+  /** API for searching events and markets */
   search;
+  /** API for order creation and status (requires API key) */
   orders;
+  /** API for imperative swaps with route preview (requires API key) */
   swap;
+  /** API for declarative intent-based swaps (requires API key) */
   intent;
+  /** API for prediction market initialization (requires API key) */
   predictionMarket;
+  /** API for token information */
   tokens;
+  /** API for trading venue information */
   venues;
+  /** WebSocket client for real-time price, trade, and orderbook updates */
   ws;
+  /**
+   * Create a new DFlow client instance.
+   *
+   * @param options - Client configuration options
+   */
   constructor(options) {
     this.metadataHttp = new HttpClient({
       baseUrl: options?.metadataBaseUrl ?? METADATA_API_BASE_URL,
@@ -602,6 +623,26 @@ var DFlowClient = class {
     this.venues = new VenuesAPI(this.tradeHttp);
     this.ws = new DFlowWebSocket(options?.wsOptions);
   }
+  /**
+   * Update the API key for both metadata and trade HTTP clients.
+   * Useful for setting the key after initialization or rotating keys.
+   *
+   * @param apiKey - The new API key to use
+   *
+   * @example
+   * ```typescript
+   * const dflow = new DFlowClient();
+   *
+   * // Browse markets without auth
+   * const markets = await dflow.markets.getMarkets();
+   *
+   * // Set API key when user logs in
+   * dflow.setApiKey('user-api-key');
+   *
+   * // Now can use authenticated endpoints
+   * const quote = await dflow.swap.getQuote(params);
+   * ```
+   */
   setApiKey(apiKey) {
     this.metadataHttp.setApiKey(apiKey);
     this.tradeHttp.setApiKey(apiKey);
@@ -737,6 +778,94 @@ function calculateScalarPayout(market, outcomeMint, amount) {
   return 0;
 }
 
-export { DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TokensAPI, TradesAPI, USDC_MINT, VenuesAPI, WEBSOCKET_URL, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };
+// src/utils/retry.ts
+function defaultShouldRetry(error, _attempt) {
+  if (error instanceof DFlowApiError) {
+    return error.statusCode === 429 || error.statusCode >= 500;
+  }
+  if (error instanceof TypeError && error.message.includes("fetch")) {
+    return true;
+  }
+  return false;
+}
+function calculateDelay(attempt, initialDelayMs, maxDelayMs, backoffMultiplier) {
+  const exponentialDelay = initialDelayMs * Math.pow(backoffMultiplier, attempt);
+  const delayWithCap = Math.min(exponentialDelay, maxDelayMs);
+  const jitter = delayWithCap * Math.random() * 0.25;
+  return delayWithCap + jitter;
+}
+async function withRetry(fn, options = {}) {
+  const {
+    maxRetries = 3,
+    initialDelayMs = 1e3,
+    maxDelayMs = 3e4,
+    backoffMultiplier = 2,
+    shouldRetry = defaultShouldRetry
+  } = options;
+  let lastError;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries && shouldRetry(error, attempt)) {
+        const delay = calculateDelay(attempt, initialDelayMs, maxDelayMs, backoffMultiplier);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+function createRetryable(fn, options = {}) {
+  return (...args) => withRetry(() => fn(...args), options);
+}
+
+// src/utils/pagination.ts
+async function* paginate(fetchPage, options) {
+  const { maxItems, pageSize, getItems, getCursor = (r) => r.cursor } = options;
+  let cursor;
+  let itemsYielded = 0;
+  do {
+    const response = await fetchPage({
+      cursor,
+      limit: pageSize
+    });
+    const items = getItems(response);
+    for (const item of items) {
+      yield item;
+      itemsYielded++;
+      if (maxItems !== void 0 && itemsYielded >= maxItems) {
+        return;
+      }
+    }
+    cursor = getCursor(response);
+  } while (cursor);
+}
+async function collectAll(fetchPage, options) {
+  const items = [];
+  for await (const item of paginate(fetchPage, options)) {
+    items.push(item);
+  }
+  return items;
+}
+async function countAll(fetchPage, options) {
+  let count = 0;
+  for await (const _ of paginate(fetchPage, options)) {
+    count++;
+  }
+  return count;
+}
+async function findFirst(fetchPage, options, predicate) {
+  for await (const item of paginate(fetchPage, options)) {
+    if (predicate(item)) {
+      return item;
+    }
+  }
+  return void 0;
+}
+
+export { DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TokensAPI, TradesAPI, USDC_MINT, VenuesAPI, WEBSOCKET_URL, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

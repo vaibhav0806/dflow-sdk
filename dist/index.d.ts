@@ -591,32 +591,108 @@ declare class DFlowWebSocket {
     get isConnected(): boolean;
 }
 
+/**
+ * Configuration options for the DFlow client.
+ */
 interface DFlowClientOptions {
+    /** API key for authenticated endpoints (required for trade API) */
     apiKey?: string;
+    /** Custom base URL for the metadata API (default: production URL) */
     metadataBaseUrl?: string;
+    /** Custom base URL for the trade API (default: production URL) */
     tradeBaseUrl?: string;
+    /** WebSocket connection options */
     wsOptions?: WebSocketOptions;
 }
+/**
+ * Main client for interacting with the DFlow prediction markets platform.
+ *
+ * @example
+ * ```typescript
+ * import { DFlowClient } from 'dflow-sdk';
+ *
+ * // Basic usage (public endpoints only)
+ * const dflow = new DFlowClient();
+ * const markets = await dflow.markets.getMarkets();
+ *
+ * // With API key (for trading)
+ * const dflow = new DFlowClient({ apiKey: 'your-api-key' });
+ * const quote = await dflow.swap.getQuote({
+ *   inputMint: USDC_MINT,
+ *   outputMint: yesMint,
+ *   amount: 1000000,
+ * });
+ *
+ * // With custom endpoints (e.g., development)
+ * import { DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL } from 'dflow-sdk';
+ *
+ * const devClient = new DFlowClient({
+ *   metadataBaseUrl: DEV_METADATA_API_BASE_URL,
+ *   tradeBaseUrl: DEV_TRADE_API_BASE_URL,
+ * });
+ * ```
+ */
 declare class DFlowClient {
     private metadataHttp;
     private tradeHttp;
+    /** API for discovering and querying prediction events */
     readonly events: EventsAPI;
+    /** API for market data, pricing, and batch queries */
     readonly markets: MarketsAPI;
+    /** API for orderbook snapshots */
     readonly orderbook: OrderbookAPI;
+    /** API for historical trade data */
     readonly trades: TradesAPI;
+    /** API for real-time milestone data */
     readonly liveData: LiveDataAPI;
+    /** API for series/category information */
     readonly series: SeriesAPI;
+    /** API for tag-based filtering */
     readonly tags: TagsAPI;
+    /** API for sports-specific filters */
     readonly sports: SportsAPI;
+    /** API for searching events and markets */
     readonly search: SearchAPI;
+    /** API for order creation and status (requires API key) */
     readonly orders: OrdersAPI;
+    /** API for imperative swaps with route preview (requires API key) */
     readonly swap: SwapAPI;
+    /** API for declarative intent-based swaps (requires API key) */
     readonly intent: IntentAPI;
+    /** API for prediction market initialization (requires API key) */
     readonly predictionMarket: PredictionMarketAPI;
+    /** API for token information */
     readonly tokens: TokensAPI;
+    /** API for trading venue information */
     readonly venues: VenuesAPI;
+    /** WebSocket client for real-time price, trade, and orderbook updates */
     readonly ws: DFlowWebSocket;
+    /**
+     * Create a new DFlow client instance.
+     *
+     * @param options - Client configuration options
+     */
     constructor(options?: DFlowClientOptions);
+    /**
+     * Update the API key for both metadata and trade HTTP clients.
+     * Useful for setting the key after initialization or rotating keys.
+     *
+     * @param apiKey - The new API key to use
+     *
+     * @example
+     * ```typescript
+     * const dflow = new DFlowClient();
+     *
+     * // Browse markets without auth
+     * const markets = await dflow.markets.getMarkets();
+     *
+     * // Set API key when user logs in
+     * dflow.setApiKey('user-api-key');
+     *
+     * // Now can use authenticated endpoints
+     * const quote = await dflow.swap.getQuote(params);
+     * ```
+     */
     setApiKey(apiKey: string): void;
 }
 
@@ -628,6 +704,202 @@ declare function getTokenBalances(connection: Connection, walletAddress: PublicK
 declare function getUserPositions(connection: Connection, walletAddress: PublicKey, marketsAPI: MarketsAPI): Promise<UserPosition[]>;
 declare function isRedemptionEligible(market: Market, outcomeMint: string): boolean;
 declare function calculateScalarPayout(market: Market, outcomeMint: string, amount: number): number;
+
+interface RetryOptions {
+    /** Maximum number of retry attempts (default: 3) */
+    maxRetries?: number;
+    /** Initial delay in milliseconds before first retry (default: 1000) */
+    initialDelayMs?: number;
+    /** Maximum delay in milliseconds between retries (default: 30000) */
+    maxDelayMs?: number;
+    /** Multiplier for exponential backoff (default: 2) */
+    backoffMultiplier?: number;
+    /** Function to determine if an error should trigger a retry */
+    shouldRetry?: (error: unknown, attempt: number) => boolean;
+}
+/**
+ * Default retry condition: retry on network errors and rate limits (429)
+ */
+declare function defaultShouldRetry(error: unknown, _attempt: number): boolean;
+/**
+ * Execute a function with automatic retry on failure using exponential backoff.
+ *
+ * @example
+ * ```typescript
+ * import { withRetry } from 'dflow-sdk';
+ *
+ * // Basic usage
+ * const markets = await withRetry(() => dflow.markets.getMarkets());
+ *
+ * // With custom options
+ * const events = await withRetry(
+ *   () => dflow.events.getEvents({ limit: 100 }),
+ *   { maxRetries: 5, initialDelayMs: 500 }
+ * );
+ *
+ * // Custom retry condition
+ * const quote = await withRetry(
+ *   () => dflow.swap.getQuote(params),
+ *   {
+ *     shouldRetry: (error) => {
+ *       if (error instanceof DFlowApiError) {
+ *         return error.statusCode === 429; // Only retry rate limits
+ *       }
+ *       return false;
+ *     }
+ *   }
+ * );
+ * ```
+ *
+ * @param fn - The async function to execute
+ * @param options - Retry configuration options
+ * @returns The result of the function
+ * @throws The last error if all retries are exhausted
+ */
+declare function withRetry<T>(fn: () => Promise<T>, options?: RetryOptions): Promise<T>;
+/**
+ * Create a retryable version of an async function.
+ *
+ * @example
+ * ```typescript
+ * import { createRetryable } from 'dflow-sdk';
+ *
+ * const getMarketsWithRetry = createRetryable(
+ *   (params) => dflow.markets.getMarkets(params),
+ *   { maxRetries: 5 }
+ * );
+ *
+ * const markets = await getMarketsWithRetry({ limit: 50 });
+ * ```
+ *
+ * @param fn - The async function to wrap
+ * @param options - Retry configuration options
+ * @returns A wrapped function with automatic retry
+ */
+declare function createRetryable<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => Promise<TResult>, options?: RetryOptions): (...args: TArgs) => Promise<TResult>;
+
+interface PaginateOptions<TResponse, TItem> {
+    /** Maximum number of items to fetch in total (default: unlimited) */
+    maxItems?: number;
+    /** Number of items per page (default: API default, usually 50) */
+    pageSize?: number;
+    /**
+     * Function to extract items array from response.
+     * Required because different APIs use different field names (markets, events, data, etc.)
+     */
+    getItems: (response: TResponse) => TItem[];
+    /** Function to extract cursor from response (default: response.cursor) */
+    getCursor?: (response: TResponse) => string | undefined;
+}
+/**
+ * Create an async iterator that automatically paginates through all results.
+ *
+ * @example
+ * ```typescript
+ * import { paginate } from 'dflow-sdk';
+ *
+ * // Iterate through all markets
+ * for await (const market of paginate(
+ *   (params) => dflow.markets.getMarkets(params),
+ *   { getItems: (r) => r.markets }
+ * )) {
+ *   console.log(market.ticker, market.yesPrice);
+ * }
+ *
+ * // Iterate through all events
+ * for await (const event of paginate(
+ *   (params) => dflow.events.getEvents({ ...params, status: 'active' }),
+ *   { getItems: (r) => r.events, maxItems: 100 }
+ * )) {
+ *   console.log(event.title);
+ * }
+ * ```
+ *
+ * @param fetchPage - Function that fetches a page given pagination params
+ * @param options - Pagination options including item extractor
+ * @yields Individual items from each page
+ */
+declare function paginate<TResponse extends {
+    cursor?: string;
+}, TItem>(fetchPage: (params: PaginationParams) => Promise<TResponse>, options: PaginateOptions<TResponse, TItem>): AsyncGenerator<TItem, void, undefined>;
+/**
+ * Collect all items from a paginated endpoint into an array.
+ *
+ * @example
+ * ```typescript
+ * import { collectAll } from 'dflow-sdk';
+ *
+ * // Get all markets as an array
+ * const allMarkets = await collectAll(
+ *   (params) => dflow.markets.getMarkets(params),
+ *   { getItems: (r) => r.markets }
+ * );
+ *
+ * console.log(`Found ${allMarkets.length} markets`);
+ *
+ * // With a limit
+ * const first100 = await collectAll(
+ *   (params) => dflow.events.getEvents(params),
+ *   { getItems: (r) => r.events, maxItems: 100 }
+ * );
+ * ```
+ *
+ * @param fetchPage - Function that fetches a page given pagination params
+ * @param options - Pagination options including item extractor
+ * @returns Array of all items
+ */
+declare function collectAll<TResponse extends {
+    cursor?: string;
+}, TItem>(fetchPage: (params: PaginationParams) => Promise<TResponse>, options: PaginateOptions<TResponse, TItem>): Promise<TItem[]>;
+/**
+ * Count total items from a paginated endpoint without storing them.
+ *
+ * @example
+ * ```typescript
+ * import { countAll } from 'dflow-sdk';
+ *
+ * const totalMarkets = await countAll(
+ *   (params) => dflow.markets.getMarkets(params),
+ *   { getItems: (r) => r.markets }
+ * );
+ *
+ * console.log(`Total markets: ${totalMarkets}`);
+ * ```
+ *
+ * @param fetchPage - Function that fetches a page given pagination params
+ * @param options - Pagination options including item extractor
+ * @returns Total count of items
+ */
+declare function countAll<TResponse extends {
+    cursor?: string;
+}, TItem>(fetchPage: (params: PaginationParams) => Promise<TResponse>, options: PaginateOptions<TResponse, TItem>): Promise<number>;
+/**
+ * Find the first item matching a predicate from a paginated endpoint.
+ *
+ * @example
+ * ```typescript
+ * import { findFirst } from 'dflow-sdk';
+ *
+ * // Find a specific market by title
+ * const market = await findFirst(
+ *   (params) => dflow.markets.getMarkets(params),
+ *   { getItems: (r) => r.markets },
+ *   (m) => m.title.includes('Bitcoin')
+ * );
+ *
+ * if (market) {
+ *   console.log('Found:', market.ticker);
+ * }
+ * ```
+ *
+ * @param fetchPage - Function that fetches a page given pagination params
+ * @param options - Pagination options including item extractor
+ * @param predicate - Function to test each item
+ * @returns The first matching item, or undefined if not found
+ */
+declare function findFirst<TResponse extends {
+    cursor?: string;
+}, TItem>(fetchPage: (params: PaginationParams) => Promise<TResponse>, options: PaginateOptions<TResponse, TItem>, predicate: (item: TItem) => boolean): Promise<TItem | undefined>;
 
 declare const METADATA_API_BASE_URL = "https://prediction-markets-api.dflow.net/api/v1";
 declare const TRADE_API_BASE_URL = "https://quote-api.dflow.net";
@@ -642,4 +914,4 @@ declare const MAX_BATCH_SIZE = 100;
 declare const MAX_FILTER_ADDRESSES = 200;
 declare const OUTCOME_TOKEN_DECIMALS = 6;
 
-export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, type DFlowClientOptions, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type Token, type TokenBalance, type TokenWithDecimals, TokensAPI, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, type Venue, VenuesAPI, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };
+export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, type DFlowClientOptions, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, type PaginateOptions, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RetryOptions, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type Token, type TokenBalance, type TokenWithDecimals, TokensAPI, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, type Venue, VenuesAPI, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };

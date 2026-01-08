@@ -1,13 +1,627 @@
 @import 'fumadocs-ui/style.css';
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   DFlow SDK - Data Flow Terminal Theme
+   A sophisticated trading terminal aesthetic
+   ============================================ */
+
 :root {
-  --fd-primary: 160 100% 42%;
+  /* Primary brand colors */
+  --dflow-cyan: 174 100% 42%;
+  --dflow-teal: 168 84% 40%;
+  --dflow-gold: 45 93% 58%;
+
+  /* Fumadocs primary override */
+  --fd-primary: 174 100% 42%;
+
+  /* Background layers */
+  --bg-deep: 222 47% 6%;
+  --bg-surface: 220 40% 9%;
+  --bg-elevated: 218 35% 12%;
+  --bg-hover: 216 30% 15%;
+
+  /* Text hierarchy */
+  --text-primary: 210 40% 96%;
+  --text-secondary: 215 20% 65%;
+  --text-muted: 215 15% 45%;
+
+  /* Accent glow */
+  --glow-cyan: 0 0 40px hsla(174, 100%, 42%, 0.3);
+  --glow-gold: 0 0 30px hsla(45, 93%, 58%, 0.2);
+
+  /* Grid pattern */
+  --grid-color: hsla(215, 20%, 30%, 0.08);
 }
 
 .dark {
-  --fd-primary: 160 100% 42%;
+  --fd-primary: 174 100% 50%;
+  --fd-background: var(--bg-deep);
+}
+
+/* ============================================
+   Base Typography
+   ============================================ */
+
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background: hsl(var(--bg-deep));
+  color: hsl(var(--text-primary));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Code and monospace elements */
+code, pre, .font-mono, kbd {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+}
+
+/* Headings with slight letter spacing */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* ============================================
+   Custom Scrollbar
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--bg-surface));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--text-muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--text-secondary));
+}
+
+/* ============================================
+   Fumadocs Overrides - Sidebar
+   ============================================ */
+
+/* Sidebar background */
+[data-rehype-pretty-code-figure] {
+  margin: 1.5rem 0;
+}
+
+/* Sidebar styling */
+.fd-sidebar {
+  background: hsl(var(--bg-surface)) !important;
+  border-right: 1px solid hsl(var(--bg-elevated)) !important;
+}
+
+/* Navigation links */
+.fd-sidebar a {
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.fd-sidebar a:hover {
+  background: hsl(var(--bg-hover)) !important;
+}
+
+.fd-sidebar a[data-active="true"] {
+  background: hsla(174, 100%, 42%, 0.1) !important;
+  color: hsl(var(--dflow-cyan)) !important;
+  border-left: 2px solid hsl(var(--dflow-cyan));
+}
+
+/* ============================================
+   Fumadocs Overrides - Content
+   ============================================ */
+
+/* Main content area */
+.fd-page {
+  background: hsl(var(--bg-deep)) !important;
+}
+
+/* TOC styling */
+.fd-toc {
+  border-left: 1px solid hsl(var(--bg-elevated)) !important;
+}
+
+.fd-toc a {
+  color: hsl(var(--text-muted)) !important;
+  transition: color 0.15s ease;
+}
+
+.fd-toc a:hover,
+.fd-toc a[data-active="true"] {
+  color: hsl(var(--dflow-cyan)) !important;
+}
+
+/* ============================================
+   Code Blocks - Terminal Style
+   ============================================ */
+
+pre {
+  background: hsl(var(--bg-surface)) !important;
+  border: 1px solid hsl(var(--bg-elevated)) !important;
+  border-radius: 8px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+pre code {
+  display: block;
+  padding: 1rem !important;
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: hsla(174, 100%, 42%, 0.1) !important;
+  color: hsl(var(--dflow-cyan)) !important;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  border: 1px solid hsla(174, 100%, 42%, 0.2);
+}
+
+/* ============================================
+   Cards & Callouts
+   ============================================ */
+
+/* Callout boxes */
+.fd-callout {
+  background: hsl(var(--bg-surface)) !important;
+  border: 1px solid hsl(var(--bg-elevated)) !important;
+  border-radius: 8px !important;
+  border-left: 3px solid hsl(var(--dflow-cyan)) !important;
+}
+
+.fd-callout[data-type="warn"] {
+  border-left-color: hsl(var(--dflow-gold)) !important;
+  background: hsla(45, 93%, 58%, 0.05) !important;
+}
+
+.fd-callout[data-type="error"] {
+  border-left-color: hsl(0, 84%, 60%) !important;
+  background: hsla(0, 84%, 60%, 0.05) !important;
+}
+
+/* ============================================
+   Tables - Data Grid Style
+   ============================================ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th {
+  background: hsl(var(--bg-surface)) !important;
+  color: hsl(var(--text-secondary)) !important;
+  font-weight: 500;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--bg-elevated));
+}
+
+td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid hsl(var(--bg-elevated));
+  color: hsl(var(--text-primary));
+}
+
+tr:hover td {
+  background: hsl(var(--bg-hover));
+}
+
+/* ============================================
+   Buttons & Interactive Elements
+   ============================================ */
+
+/* Primary button style */
+.btn-primary {
+  background: linear-gradient(135deg, hsl(var(--dflow-cyan)), hsl(var(--dflow-teal)));
+  color: hsl(var(--bg-deep));
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: var(--glow-cyan);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 50px hsla(174, 100%, 42%, 0.4);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: hsl(var(--bg-elevated));
+  color: hsl(var(--text-primary));
+  border: 1px solid hsl(var(--bg-hover));
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: hsl(var(--bg-hover));
+  border-color: hsl(var(--dflow-cyan));
+}
+
+/* ============================================
+   Search Styling
+   ============================================ */
+
+.fd-search-dialog {
+  background: hsl(var(--bg-surface)) !important;
+  border: 1px solid hsl(var(--bg-elevated)) !important;
+}
+
+/* ============================================
+   Animations & Effects
+   ============================================ */
+
+/* Subtle pulse for active elements */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px hsla(174, 100%, 42%, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px hsla(174, 100%, 42%, 0.4);
+  }
+}
+
+/* Flow animation for decorative elements */
+@keyframes data-flow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Typing cursor animation */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Grid background pattern */
+.grid-pattern {
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Gradient mesh background */
+.mesh-gradient {
+  background:
+    radial-gradient(ellipse at 20% 20%, hsla(174, 100%, 42%, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, hsla(220, 100%, 50%, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 60%, hsla(45, 93%, 58%, 0.08) 0%, transparent 40%),
+    hsl(var(--bg-deep));
+}
+
+/* Animated gradient border */
+.gradient-border {
+  position: relative;
+  background: hsl(var(--bg-surface));
+  border-radius: 12px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    hsla(174, 100%, 42%, 0.5),
+    hsla(220, 100%, 50%, 0.3),
+    hsla(45, 93%, 58%, 0.4),
+    hsla(174, 100%, 42%, 0.5)
+  );
+  background-size: 300% 300%;
+  animation: data-flow 8s ease infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ============================================
+   Floating Elements
+   ============================================ */
+
+/* Floating orb effect */
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(-30px, -20px) scale(1.05);
+  }
+}
+
+/* ============================================
+   Selection & Focus States
+   ============================================ */
+
+::selection {
+  background: hsla(174, 100%, 42%, 0.3);
+  color: hsl(var(--text-primary));
+}
+
+:focus-visible {
+  outline: 2px solid hsl(var(--dflow-cyan));
+  outline-offset: 2px;
+}
+
+/* ============================================
+   Nav Header Enhancement
+   ============================================ */
+
+.fd-nav {
+  background: hsla(222, 47%, 6%, 0.85) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid hsla(215, 20%, 30%, 0.2) !important;
+}
+
+/* Nav logo styling */
+.nav-logo {
+  position: relative;
+}
+
+/* Nav link styling */
+.fd-nav a[href] {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--text-secondary)) !important;
+  transition: color 0.2s ease;
+}
+
+.fd-nav a[href]:hover {
+  color: hsl(var(--text-primary)) !important;
+}
+
+/* Active nav link */
+.fd-nav a[data-active="true"] {
+  color: hsl(var(--dflow-cyan)) !important;
+}
+
+/* GitHub icon styling */
+.fd-nav svg {
+  transition: opacity 0.2s ease;
+}
+
+.fd-nav a:hover svg {
+  opacity: 1;
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Hide scrollbar but allow scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive nav visibility */
+.desktop-nav-links {
+  display: none !important;
+}
+
+.mobile-menu-btn {
+  display: block !important;
+}
+
+@media (min-width: 768px) {
+  .desktop-nav-links {
+    display: flex !important;
+  }
+
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   Hero Section Animations
+   ============================================ */
+
+/* Staggered fade-in animation */
+.hero-fade-in {
+  opacity: 0;
+  animation: hero-entrance 0.8s ease forwards;
+}
+
+@keyframes hero-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animated gradient text */
+.hero-gradient-text {
+  background: linear-gradient(
+    135deg,
+    hsl(174, 100%, 50%) 0%,
+    hsl(190, 100%, 55%) 25%,
+    hsl(220, 100%, 65%) 50%,
+    hsl(174, 100%, 50%) 75%,
+    hsl(190, 100%, 55%) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* Animated vertical beams */
+.hero-beam {
+  animation: beam-pulse 6s ease-in-out infinite;
+}
+
+@keyframes beam-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scaleY(1.1);
+  }
+}
+
+/* Code window hover effect */
+.code-window {
+  transition: transform 0.3s ease;
+}
+
+.code-window:hover {
+  transform: translateY(-4px);
+}
+
+/* ============================================
+   Feature Cards - HUD Terminal Style
+   ============================================ */
+
+.feature-card {
+  opacity: 0;
+  animation: feature-fade-in 0.6s ease forwards;
+}
+
+@keyframes feature-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover lift effect */
+.feature-card:hover {
+  transform: translateY(-4px);
+  transition: transform 0.3s ease;
+}
+
+/* Scan line effect on hover */
+.feature-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.feature-card:hover::after {
+  opacity: 0.6;
+  animation: scan-line 1.5s ease infinite;
+}
+
+@keyframes scan-line {
+  0% {
+    top: 0;
+    opacity: 0.6;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   CTA Button Responsive Width
+   ============================================ */
+
+.cta-btn {
+  width: auto;
+}
+
+@media (max-width: 639px) {
+  .cta-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+  pre code {
+    font-size: 0.8rem;
+  }
+
+  .floating-orb {
+    display: none;
+  }
+
+  .feature-card {
+    animation-delay: 0ms !important;
+  }
 }

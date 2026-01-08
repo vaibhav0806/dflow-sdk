@@ -1,0 +1,136 @@
+---
+title: Search API
+description: Search for events and markets by keyword
+---
+
+# Search API
+
+The Search API allows you to find events and their nested markets by searching titles and tickers.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const search = dflow.search;
+```
+
+## Methods
+
+### search
+
+Search for events matching a query string.
+
+```typescript
+const results = await dflow.search.search({
+  query: 'bitcoin',
+  limit: 10,
+});
+
+for (const event of results.events) {
+  console.log(`${event.title}`);
+}
+```
+
+**Parameters:**
+
+```typescript
+interface SearchParams {
+  query: string;    // Search term
+  limit?: number;   // Max results to return
+}
+```
+
+**Returns:** `SearchResult`
+
+```typescript
+interface SearchResult {
+  events: Event[];  // Events with nested markets
+}
+```
+
+---
+
+## Examples
+
+### Basic Search
+
+```typescript
+const results = await dflow.search.search({
+  query: 'bitcoin',
+});
+
+console.log(`Found ${results.events.length} events for "bitcoin":\n`);
+
+for (const event of results.events) {
+  console.log(`📊 ${event.title}`);
+  console.log(`   Ticker: ${event.ticker}`);
+  console.log(`   Status: ${event.status}`);
+  console.log('');
+}
+```
+
+### Search with Limit
+
+```typescript
+// Get top 5 results
+const results = await dflow.search.search({
+  query: 'election',
+  limit: 5,
+});
+
+console.log(`Top ${results.events.length} election events:`);
+for (const event of results.events) {
+  console.log(`  - ${event.title}`);
+}
+```
+
+### Search and Get Markets
+
+```typescript
+const results = await dflow.search.search({
+  query: 'NFL',
+});
+
+// Get markets for each matching event
+for (const event of results.events) {
+  console.log(`\n${event.title}:`);
+
+  if (event.markets && event.markets.length > 0) {
+    for (const market of event.markets) {
+      console.log(`  - ${market.title}`);
+      console.log(`    YES: ${market.yesPrice} | NO: ${market.noPrice}`);
+    }
+  }
+}
+```
+
+### Build a Search Interface
+
+```typescript
+async function searchMarkets(query: string) {
+  if (!query.trim()) {
+    return [];
+  }
+
+  const results = await dflow.search.search({
+    query: query.trim(),
+    limit: 20,
+  });
+
+  return results.events.flatMap(event => {
+    if (!event.markets) return [];
+
+    return event.markets.map(market => ({
+      eventTitle: event.title,
+      marketTitle: market.title,
+      ticker: market.ticker,
+      yesPrice: market.yesPrice,
+      noPrice: market.noPrice,
+    }));
+  });
+}
+
+// Usage
+const markets = await searchMarkets('crypto');
+console.log(`Found ${markets.length} markets`);
+```

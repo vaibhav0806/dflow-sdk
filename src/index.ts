@@ -36,6 +36,21 @@ export {
 export { HttpClient, DFlowApiError } from './utils/http.js';
 
 export {
+  withRetry,
+  createRetryable,
+  defaultShouldRetry,
+  type RetryOptions,
+} from './utils/retry.js';
+
+export {
+  paginate,
+  collectAll,
+  countAll,
+  findFirst,
+  type PaginateOptions,
+} from './utils/pagination.js';
+
+export {
   METADATA_API_BASE_URL,
   TRADE_API_BASE_URL,
   WEBSOCKET_URL,

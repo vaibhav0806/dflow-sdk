@@ -47,10 +47,10 @@ const confirmation = await waitForConfirmation(
   'confirmed' // or 'finalized'
 );
 
-if (confirmation.value.err) {
-  console.error('Transaction failed:', confirmation.value.err);
+if (confirmation.err) {
+  console.error('Transaction failed:', confirmation.err);
 } else {
-  console.log('Transaction confirmed!');
+  console.log('Transaction confirmed at slot:', confirmation.slot);
 }
 ```
 
@@ -71,15 +71,18 @@ const result = await signSendAndConfirm(
 );
 
 console.log(`Signature: ${result.signature}`);
-console.log(`Confirmed: ${!result.confirmation.value.err}`);
+console.log(`Status: ${result.confirmationStatus}`);
+console.log(`Slot: ${result.slot}`);
 ```
 
-**Returns:**
+**Returns:** `TransactionConfirmation`
 
 ```typescript
-interface SignSendConfirmResult {
+interface TransactionConfirmation {
   signature: string;
-  confirmation: RpcResponseAndContext<SignatureResult>;
+  slot: number;
+  confirmationStatus: 'processed' | 'confirmed' | 'finalized';
+  err: unknown | null;
 }
 ```
 

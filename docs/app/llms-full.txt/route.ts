@@ -20,7 +20,7 @@ ${page.data.description ? `Description: ${page.data.description}` : ''}
 This is the complete documentation for the DFlow SDK - a unified TypeScript SDK for building on DFlow's Solana-based prediction markets and trading platform.
 
 Website: https://pond.dflow.net
-SDK Repository: https://github.com/dflow-protocol/dflow-sdk
+SDK Repository: https://github.com/vaibhav0806/dflow-sdk
 
 ---
 

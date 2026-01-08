@@ -1,0 +1,91 @@
+---
+title: Venues API
+description: Access available trading venues
+---
+
+# Venues API
+
+The Venues API provides information about available trading venues on DFlow.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const venues = dflow.venues;
+```
+
+## Methods
+
+### getVenues
+
+Get all available trading venues.
+
+```typescript
+const venues = await dflow.venues.getVenues();
+
+for (const venue of venues) {
+  console.log(`${venue.name} (${venue.id})`);
+}
+```
+
+**Returns:** `Venue[]`
+
+```typescript
+interface Venue {
+  id: string;
+  name: string;
+  label: string;
+}
+```
+
+---
+
+## Examples
+
+### List All Venues
+
+```typescript
+const venues = await dflow.venues.getVenues();
+
+console.log('Available trading venues:\n');
+
+for (const venue of venues) {
+  console.log(`🏛️ ${venue.name}`);
+  console.log(`   ID: ${venue.id}`);
+  console.log(`   Label: ${venue.label}`);
+  console.log('');
+}
+```
+
+### Find Venue by ID
+
+```typescript
+const venues = await dflow.venues.getVenues();
+
+function findVenue(id: string) {
+  return venues.find(v => v.id === id);
+}
+
+const venue = findVenue('kalshi');
+if (venue) {
+  console.log(`Found: ${venue.name}`);
+}
+```
+
+### Display Venue Options
+
+```typescript
+const venues = await dflow.venues.getVenues();
+
+// Create options for a dropdown
+const options = venues.map(venue => ({
+  value: venue.id,
+  label: venue.label,
+  display: venue.name,
+}));
+
+console.log('Venue options:');
+for (const opt of options) {
+  console.log(`  [${opt.value}] ${opt.display}`);
+}
+```

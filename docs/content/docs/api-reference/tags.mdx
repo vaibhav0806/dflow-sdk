@@ -1,0 +1,93 @@
+---
+title: Tags API
+description: Access tags organized by categories for filtering markets
+---
+
+# Tags API
+
+The Tags API provides access to tags organized by categories. Tags help you filter and discover markets by topic.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const tags = dflow.tags;
+```
+
+## Methods
+
+### getTagsByCategories
+
+Get all tags organized by their categories.
+
+```typescript
+const categoryTags = await dflow.tags.getTagsByCategories();
+
+for (const [category, tags] of Object.entries(categoryTags)) {
+  console.log(`${category}: ${tags.join(', ')}`);
+}
+```
+
+**Returns:** `CategoryTags`
+
+```typescript
+interface CategoryTags {
+  [category: string]: string[];
+}
+```
+
+---
+
+## Examples
+
+### List All Categories and Tags
+
+```typescript
+const categoryTags = await dflow.tags.getTagsByCategories();
+
+console.log('Available categories and tags:\n');
+
+for (const [category, tags] of Object.entries(categoryTags)) {
+  console.log(`📁 ${category}`);
+  for (const tag of tags) {
+    console.log(`   - ${tag}`);
+  }
+  console.log('');
+}
+```
+
+### Find Markets by Tag
+
+```typescript
+// Get all tags
+const categoryTags = await dflow.tags.getTagsByCategories();
+
+// Find a specific tag (e.g., 'crypto')
+const cryptoTag = Object.values(categoryTags)
+  .flat()
+  .find(tag => tag.toLowerCase() === 'crypto');
+
+if (cryptoTag) {
+  // Search for markets with this tag
+  const results = await dflow.search.search({ query: cryptoTag });
+  console.log(`Found ${results.events.length} events related to ${cryptoTag}`);
+}
+```
+
+### Count Tags per Category
+
+```typescript
+const categoryTags = await dflow.tags.getTagsByCategories();
+
+const categoryCounts = Object.entries(categoryTags)
+  .map(([category, tags]) => ({
+    category,
+    count: tags.length,
+  }))
+  .sort((a, b) => b.count - a.count);
+
+console.log('Tags per category:');
+for (const { category, count } of categoryCounts) {
+  console.log(`  ${category}: ${count} tags`);
+}
+```
