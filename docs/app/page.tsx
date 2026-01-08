@@ -121,7 +121,7 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             Documentation
           </Link>
           <Link
-            href="https://github.com/dflow-protocol/dflow-sdk"
+            href="https://github.com/vaibhav0806/dflow-sdk"
             onClick={onClose}
             className="flex items-center gap-3 rounded-lg px-4 py-3 text-[15px] font-medium text-[hsl(215,20%,65%)] transition-all hover:bg-[hsl(218,35%,12%)] hover:text-white"
             target="_blank"
@@ -415,7 +415,7 @@ export default function HomePage() {
               Documentation
             </Link>
             <Link
-              href="https://github.com/dflow-protocol/dflow-sdk"
+              href="https://github.com/vaibhav0806/dflow-sdk"
               className="text-sm font-medium text-[hsl(215,20%,65%)] transition-colors hover:text-white"
               target="_blank"
             >
@@ -728,7 +728,7 @@ export default function HomePage() {
             </div>
             <div className="flex items-center gap-6">
               <Link
-                href="https://github.com/dflow-protocol/dflow-sdk"
+                href="https://github.com/vaibhav0806/dflow-sdk"
                 className="text-[hsl(215,15%,45%)] transition-colors hover:text-white"
               >
                 <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
