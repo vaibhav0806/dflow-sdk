@@ -427,6 +427,22 @@ interface TransactionConfirmation {
     err: unknown | null;
 }
 
+interface Token {
+    mint: string;
+    symbol: string;
+    name: string;
+    logoUri?: string;
+}
+interface TokenWithDecimals extends Token {
+    decimals: number;
+}
+
+interface Venue {
+    id: string;
+    name: string;
+    label: string;
+}
+
 declare class EventsAPI {
     private http;
     constructor(http: HttpClient);
@@ -525,6 +541,19 @@ declare class PredictionMarketAPI {
     initializeMarket(params: PredictionMarketInitParams): Promise<PredictionMarketInitResponse>;
 }
 
+declare class TokensAPI {
+    private http;
+    constructor(http: HttpClient);
+    getTokens(): Promise<Token[]>;
+    getTokensWithDecimals(): Promise<TokenWithDecimals[]>;
+}
+
+declare class VenuesAPI {
+    private http;
+    constructor(http: HttpClient);
+    getVenues(): Promise<Venue[]>;
+}
+
 type MessageCallback<T> = (data: T) => void;
 type ErrorCallback = (error: Error) => void;
 type CloseCallback = (event: CloseEvent) => void;
@@ -584,6 +613,8 @@ declare class DFlowClient {
     readonly swap: SwapAPI;
     readonly intent: IntentAPI;
     readonly predictionMarket: PredictionMarketAPI;
+    readonly tokens: TokensAPI;
+    readonly venues: VenuesAPI;
     readonly ws: DFlowWebSocket;
     constructor(options?: DFlowClientOptions);
     setApiKey(apiKey: string): void;
@@ -611,4 +642,4 @@ declare const MAX_BATCH_SIZE = 100;
 declare const MAX_FILTER_ADDRESSES = 200;
 declare const OUTCOME_TOKEN_DECIMALS = 6;
 
-export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, type DFlowClientOptions, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type TokenBalance, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };
+export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, type DFlowClientOptions, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type Token, type TokenBalance, type TokenWithDecimals, TokensAPI, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, type Venue, VenuesAPI, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };

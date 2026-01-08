@@ -1,7 +1,7 @@
 {
-  "name": "@dflow-dev/prediction-markets",
+  "name": "dflow-sdk",
   "version": "0.1.0",
-  "description": "TypeScript SDK for DFlow Prediction Markets API on Solana",
+  "description": "Unified TypeScript SDK for DFlow on Solana - prediction markets and trading",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -32,6 +32,8 @@
     "solana",
     "prediction-markets",
     "kalshi",
+    "trading",
+    "swap",
     "defi",
     "crypto",
     "sdk"

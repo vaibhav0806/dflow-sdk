@@ -374,6 +374,29 @@ var PredictionMarketAPI = class {
   }
 };
 
+// src/api/trade/tokens.ts
+var TokensAPI = class {
+  constructor(http) {
+    this.http = http;
+  }
+  async getTokens() {
+    return this.http.get("/tokens");
+  }
+  async getTokensWithDecimals() {
+    return this.http.get("/tokens-with-decimals");
+  }
+};
+
+// src/api/trade/venues.ts
+var VenuesAPI = class {
+  constructor(http) {
+    this.http = http;
+  }
+  async getVenues() {
+    return this.http.get("/venues");
+  }
+};
+
 // src/websocket/client.ts
 var DFlowWebSocket = class {
   ws = null;
@@ -552,6 +575,8 @@ var DFlowClient = class {
   swap;
   intent;
   predictionMarket;
+  tokens;
+  venues;
   ws;
   constructor(options) {
     this.metadataHttp = new HttpClient({
@@ -575,6 +600,8 @@ var DFlowClient = class {
     this.swap = new SwapAPI(this.tradeHttp);
     this.intent = new IntentAPI(this.tradeHttp);
     this.predictionMarket = new PredictionMarketAPI(this.tradeHttp);
+    this.tokens = new TokensAPI(this.tradeHttp);
+    this.venues = new VenuesAPI(this.tradeHttp);
     this.ws = new DFlowWebSocket(options?.wsOptions);
   }
   setApiKey(apiKey) {
@@ -738,8 +765,10 @@ exports.SportsAPI = SportsAPI;
 exports.SwapAPI = SwapAPI;
 exports.TRADE_API_BASE_URL = TRADE_API_BASE_URL;
 exports.TagsAPI = TagsAPI;
+exports.TokensAPI = TokensAPI;
 exports.TradesAPI = TradesAPI;
 exports.USDC_MINT = USDC_MINT;
+exports.VenuesAPI = VenuesAPI;
 exports.WEBSOCKET_URL = WEBSOCKET_URL;
 exports.calculateScalarPayout = calculateScalarPayout;
 exports.getTokenBalances = getTokenBalances;

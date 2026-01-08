@@ -21,6 +21,8 @@ import {
   SwapAPI,
   IntentAPI,
   PredictionMarketAPI,
+  TokensAPI,
+  VenuesAPI,
 } from './api/trade/index.js';
 
 import { DFlowWebSocket } from './websocket/client.js';
@@ -52,6 +54,8 @@ export class DFlowClient {
   public readonly swap: SwapAPI;
   public readonly intent: IntentAPI;
   public readonly predictionMarket: PredictionMarketAPI;
+  public readonly tokens: TokensAPI;
+  public readonly venues: VenuesAPI;
 
   public readonly ws: DFlowWebSocket;
 
@@ -80,6 +84,8 @@ export class DFlowClient {
     this.swap = new SwapAPI(this.tradeHttp);
     this.intent = new IntentAPI(this.tradeHttp);
     this.predictionMarket = new PredictionMarketAPI(this.tradeHttp);
+    this.tokens = new TokensAPI(this.tradeHttp);
+    this.venues = new VenuesAPI(this.tradeHttp);
 
     this.ws = new DFlowWebSocket(options?.wsOptions);
   }

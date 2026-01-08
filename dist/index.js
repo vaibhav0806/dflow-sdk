@@ -372,6 +372,29 @@ var PredictionMarketAPI = class {
   }
 };
 
+// src/api/trade/tokens.ts
+var TokensAPI = class {
+  constructor(http) {
+    this.http = http;
+  }
+  async getTokens() {
+    return this.http.get("/tokens");
+  }
+  async getTokensWithDecimals() {
+    return this.http.get("/tokens-with-decimals");
+  }
+};
+
+// src/api/trade/venues.ts
+var VenuesAPI = class {
+  constructor(http) {
+    this.http = http;
+  }
+  async getVenues() {
+    return this.http.get("/venues");
+  }
+};
+
 // src/websocket/client.ts
 var DFlowWebSocket = class {
   ws = null;
@@ -550,6 +573,8 @@ var DFlowClient = class {
   swap;
   intent;
   predictionMarket;
+  tokens;
+  venues;
   ws;
   constructor(options) {
     this.metadataHttp = new HttpClient({
@@ -573,6 +598,8 @@ var DFlowClient = class {
     this.swap = new SwapAPI(this.tradeHttp);
     this.intent = new IntentAPI(this.tradeHttp);
     this.predictionMarket = new PredictionMarketAPI(this.tradeHttp);
+    this.tokens = new TokensAPI(this.tradeHttp);
+    this.venues = new VenuesAPI(this.tradeHttp);
     this.ws = new DFlowWebSocket(options?.wsOptions);
   }
   setApiKey(apiKey) {
@@ -710,6 +737,6 @@ function calculateScalarPayout(market, outcomeMint, amount) {
   return 0;
 }
 
-export { DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TradesAPI, USDC_MINT, WEBSOCKET_URL, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };
+export { DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TokensAPI, TradesAPI, USDC_MINT, VenuesAPI, WEBSOCKET_URL, calculateScalarPayout, getTokenBalances, getUserPositions, isRedemptionEligible, signAndSendTransaction, signSendAndConfirm, waitForConfirmation };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

@@ -19,6 +19,8 @@ export {
   SwapAPI,
   IntentAPI,
   PredictionMarketAPI,
+  TokensAPI,
+  VenuesAPI,
 } from './api/trade/index.js';
 
 export {
