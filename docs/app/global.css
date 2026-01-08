@@ -181,6 +181,115 @@ pre code {
   line-height: 1.7;
 }
 
+/* ============================================
+   Light Mode Code Blocks - Editorial Style
+   High contrast, premium publication aesthetic
+   ============================================ */
+
+:root:not(.dark) pre {
+  background:
+    linear-gradient(135deg, hsl(45, 30%, 98%) 0%, hsl(210, 20%, 97%) 100%) !important;
+  border: 1px solid hsl(210, 25%, 88%) !important;
+  box-shadow:
+    inset 0 1px 0 hsla(0, 0%, 100%, 0.8),
+    0 2px 8px hsla(220, 60%, 20%, 0.06),
+    0 1px 3px hsla(220, 60%, 20%, 0.08) !important;
+}
+
+:root:not(.dark) [data-rehype-pretty-code-figure] pre {
+  background:
+    linear-gradient(135deg, hsl(45, 30%, 98%) 0%, hsl(210, 20%, 97%) 100%) !important;
+  border: 1px solid hsl(210, 25%, 88%) !important;
+}
+
+/* Base code text - rich charcoal */
+:root:not(.dark) pre code {
+  color: hsl(220, 25%, 18%) !important;
+  text-shadow: 0 1px 0 hsla(0, 0%, 100%, 0.5);
+}
+
+:root:not(.dark) [data-rehype-pretty-code-figure] code [data-line] {
+  color: hsl(220, 25%, 18%);
+}
+
+/* ============================================
+   Light Mode Syntax Token Colors
+   Carefully chosen for maximum readability
+   ============================================ */
+
+/* Keywords - deep indigo */
+:root:not(.dark) pre [style*="--shiki-light:#7C3AED"],
+:root:not(.dark) pre [style*="--shiki-light:#8250DF"],
+:root:not(.dark) pre [style*="--shiki-light:#CF222E"],
+:root:not(.dark) pre [style*="--shiki-light:#D73A49"],
+:root:not(.dark) pre [style*="--shiki-light:#a626a4"],
+:root:not(.dark) pre span[style*="color:#CF222E"],
+:root:not(.dark) pre span[style*="color:#D73A49"] {
+  color: hsl(262, 70%, 40%) !important;
+  font-weight: 500;
+}
+
+/* Strings - rich amber/gold */
+:root:not(.dark) pre [style*="--shiki-light:#032F62"],
+:root:not(.dark) pre [style*="--shiki-light:#0A3069"],
+:root:not(.dark) pre [style*="--shiki-light:#50a14f"],
+:root:not(.dark) pre span[style*="color:#032F62"],
+:root:not(.dark) pre span[style*="color:#0A3069"] {
+  color: hsl(35, 85%, 35%) !important;
+}
+
+/* Functions & methods - deep teal (brand) */
+:root:not(.dark) pre [style*="--shiki-light:#6F42C1"],
+:root:not(.dark) pre [style*="--shiki-light:#8250DF"],
+:root:not(.dark) pre [style*="--shiki-light:#4078f2"],
+:root:not(.dark) pre span[style*="color:#6F42C1"] {
+  color: hsl(174, 100%, 28%) !important;
+  font-weight: 500;
+}
+
+/* Variables & properties - slate blue */
+:root:not(.dark) pre [style*="--shiki-light:#24292F"],
+:root:not(.dark) pre [style*="--shiki-light:#24292E"],
+:root:not(.dark) pre span[style*="color:#24292F"],
+:root:not(.dark) pre span[style*="color:#24292E"] {
+  color: hsl(215, 40%, 25%) !important;
+}
+
+/* Numbers & constants - burnt orange */
+:root:not(.dark) pre [style*="--shiki-light:#005CC5"],
+:root:not(.dark) pre [style*="--shiki-light:#0550AE"],
+:root:not(.dark) pre span[style*="color:#005CC5"],
+:root:not(.dark) pre span[style*="color:#0550AE"] {
+  color: hsl(20, 80%, 42%) !important;
+}
+
+/* Comments - muted sage */
+:root:not(.dark) pre [style*="--shiki-light:#6A737D"],
+:root:not(.dark) pre [style*="--shiki-light:#57606A"],
+:root:not(.dark) pre [style*="--shiki-light:#a0a1a7"],
+:root:not(.dark) pre span[style*="color:#6A737D"],
+:root:not(.dark) pre span[style*="color:#57606A"] {
+  color: hsl(150, 10%, 45%) !important;
+  font-style: italic;
+}
+
+/* Types & classes - deep rose */
+:root:not(.dark) pre [style*="--shiki-light:#953800"],
+:root:not(.dark) pre [style*="--shiki-light:#E36209"],
+:root:not(.dark) pre span[style*="color:#953800"],
+:root:not(.dark) pre span[style*="color:#E36209"] {
+  color: hsl(340, 65%, 40%) !important;
+}
+
+/* Operators & punctuation - medium gray */
+:root:not(.dark) pre [style*="--shiki-light:#24292F"] {
+  color: hsl(220, 15%, 35%) !important;
+}
+
+/* ============================================
+   Light Mode Inline Code - Refined
+   ============================================ */
+
 /* Inline code */
 :not(pre) > code {
   background: hsla(174, 100%, 42%, 0.1) !important;
@@ -189,6 +298,15 @@ pre code {
   border-radius: 4px;
   font-size: 0.875em;
   border: 1px solid hsla(174, 100%, 42%, 0.2);
+}
+
+/* Light mode inline code - crisp teal on warm cream */
+:root:not(.dark) :not(pre) > code {
+  background: linear-gradient(135deg, hsl(174, 50%, 96%) 0%, hsl(174, 40%, 94%) 100%) !important;
+  color: hsl(174, 100%, 22%) !important;
+  border: 1px solid hsl(174, 50%, 80%) !important;
+  box-shadow: 0 1px 2px hsla(174, 50%, 30%, 0.08);
+  font-weight: 500;
 }
 
 /* ============================================
@@ -631,15 +749,23 @@ tr:hover td {
 
 /* ============================================
    Homepage Code Block - Always Dark
+   Force dark mode regardless of theme
    ============================================ */
 
-.homepage-code-block pre {
+.homepage-code-block pre,
+:root:not(.dark) .homepage-code-block pre,
+:root .homepage-code-block pre {
   background: hsl(222, 47%, 7%) !important;
   border: 1px solid hsl(218, 35%, 18%) !important;
+  box-shadow: none !important;
 }
 
-.homepage-code-block pre code {
+.homepage-code-block pre code,
+:root:not(.dark) .homepage-code-block pre code,
+:root .homepage-code-block pre code {
   background: transparent !important;
+  color: inherit !important;
+  text-shadow: none !important;
 }
 
 /* ============================================
