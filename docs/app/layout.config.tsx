@@ -15,11 +15,6 @@ export const baseOptions: BaseLayoutProps = {
       active: 'nested-url',
     },
     {
-      text: 'GitHub',
-      url: 'https://github.com/dflow-protocol/dflow-sdk',
-      external: true,
-    },
-    {
       text: 'DFlow',
       url: 'https://pond.dflow.net',
       external: true,
