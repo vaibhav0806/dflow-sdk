@@ -469,7 +469,7 @@ export default function HomePage() {
                 <span className="hero-gradient-text">
                   <TypeWriter
                     words={['Prediction Markets', 'Trading Bots', 'DeFi Apps', 'Market Makers']}
-                    className=""
+                    className="text-[0.9em] sm:text-[1em]"
                   />
                 </span>
               </h1>
@@ -528,7 +528,7 @@ export default function HomePage() {
 
             {/* Enhanced Code preview */}
             <div className="hero-fade-in mx-auto max-w-3xl px-2 sm:px-0" style={{ animationDelay: '600ms' }}>
-              <div className="code-window group relative">
+              <div className="code-window homepage-code-block group relative">
                 {/* Glow effect behind */}
                 <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-[hsl(174,100%,42%,0.2)] via-[hsl(220,100%,60%,0.1)] to-[hsl(280,100%,60%,0.15)] opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
 

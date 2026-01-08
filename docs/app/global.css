@@ -630,6 +630,19 @@ tr:hover td {
 }
 
 /* ============================================
+   Homepage Code Block - Always Dark
+   ============================================ */
+
+.homepage-code-block pre {
+  background: hsl(222, 47%, 7%) !important;
+  border: 1px solid hsl(218, 35%, 18%) !important;
+}
+
+.homepage-code-block pre code {
+  background: transparent !important;
+}
+
+/* ============================================
    Responsive Adjustments
    ============================================ */
 
