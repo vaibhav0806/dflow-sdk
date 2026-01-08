@@ -1,0 +1,188 @@
+---
+title: Error Handling
+description: Handle API errors and exceptions gracefully
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Error Handling
+
+The SDK provides a custom `DFlowApiError` class for handling API errors with detailed information.
+
+## DFlowApiError
+
+All API errors are thrown as `DFlowApiError` instances.
+
+```typescript
+import { DFlowApiError } from 'dflow-sdk';
+
+try {
+  const market = await dflow.markets.getMarket('invalid-ticker');
+} catch (error) {
+  if (error instanceof DFlowApiError) {
+    console.error(`Status: ${error.statusCode}`);
+    console.error(`Message: ${error.message}`);
+    console.error(`Response:`, error.response);
+  }
+}
+```
+
+## Error Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `string` | Error message |
+| `statusCode` | `number` | HTTP status code |
+| `response` | `unknown` | Raw API response body |
+
+## Common Error Codes
+
+| Status | Meaning | Common Causes |
+|--------|---------|---------------|
+| `400` | Bad Request | Invalid parameters |
+| `401` | Unauthorized | Missing or invalid API key |
+| `404` | Not Found | Market/event doesn't exist |
+| `429` | Rate Limited | Too many requests |
+| `500` | Server Error | API service issue |
+
+## Handling Patterns
+
+### Basic Error Handling
+
+```typescript
+import { DFlowApiError } from 'dflow-sdk';
+
+async function getMarketSafely(ticker: string) {
+  try {
+    return await dflow.markets.getMarket(ticker);
+  } catch (error) {
+    if (error instanceof DFlowApiError) {
+      if (error.statusCode === 404) {
+        console.log(`Market ${ticker} not found`);
+        return null;
+      }
+      throw error; // Re-throw other API errors
+    }
+    throw error; // Re-throw non-API errors
+  }
+}
+```
+
+### Rate Limit Handling
+
+```typescript
+async function fetchWithRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error instanceof DFlowApiError && error.statusCode === 429) {
+        if (attempt < maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+          console.log(`Rate limited. Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+      throw error;
+    }
+  }
+  throw new Error('Max retries exceeded');
+}
+
+// Usage
+const markets = await fetchWithRetry(() => 
+  dflow.markets.getMarkets({ status: 'active' })
+);
+```
+
+### Comprehensive Error Handler
+
+```typescript
+import { DFlowApiError } from 'dflow-sdk';
+
+function handleDFlowError(error: unknown): void {
+  if (error instanceof DFlowApiError) {
+    switch (error.statusCode) {
+      case 400:
+        console.error('Invalid request:', error.response);
+        break;
+      case 401:
+        console.error('Authentication failed. Check your API key.');
+        break;
+      case 404:
+        console.error('Resource not found');
+        break;
+      case 429:
+        console.error('Rate limited. Please slow down requests.');
+        break;
+      case 500:
+      case 502:
+      case 503:
+        console.error('Server error. Please try again later.');
+        break;
+      default:
+        console.error(`API error ${error.statusCode}:`, error.message);
+    }
+  } else if (error instanceof Error) {
+    console.error('Unexpected error:', error.message);
+  } else {
+    console.error('Unknown error:', error);
+  }
+}
+```
+
+## WebSocket Errors
+
+WebSocket errors are handled differently through callbacks:
+
+```typescript
+// Handle connection errors
+dflow.ws.onError((error) => {
+  console.error('WebSocket error:', error.message);
+});
+
+// Handle disconnections
+dflow.ws.onClose((event) => {
+  console.log(`Disconnected: ${event.code} - ${event.reason}`);
+});
+```
+
+<Callout type="info">
+  The WebSocket client automatically attempts to reconnect on disconnection. You can configure this behavior in the client options.
+</Callout>
+
+## Transaction Errors
+
+For Solana transaction errors:
+
+```typescript
+import { signSendAndConfirm } from 'dflow-sdk';
+
+try {
+  const result = await signSendAndConfirm(
+    connection,
+    transaction,
+    keypair,
+    'confirmed'
+  );
+  
+  if (result.confirmation.value.err) {
+    console.error('Transaction failed:', result.confirmation.value.err);
+  }
+} catch (error) {
+  // Network or signing errors
+  console.error('Transaction error:', error);
+}
+```
+
+## Best Practices
+
+1. **Always use try-catch**: Wrap API calls in try-catch blocks
+2. **Check error type**: Use `instanceof DFlowApiError` for API errors
+3. **Log appropriately**: Include status code and response for debugging
+4. **Handle rate limits**: Implement exponential backoff for 429 errors
+5. **Graceful degradation**: Provide fallbacks for non-critical failures

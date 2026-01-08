@@ -1,0 +1,205 @@
+---
+title: Quickstart
+description: Get started with DFlow SDK in 5 minutes
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+# Quickstart
+
+This guide will walk you through the basics of using the DFlow SDK to discover markets, get quotes, and execute trades.
+
+## Initialize the Client
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+const dflow = new DFlowClient({
+  apiKey: 'your-api-key', // Optional, for higher rate limits
+});
+```
+
+<Callout type="info">
+  The API key is optional for most read operations. Contact DFlow for access to higher rate limits.
+</Callout>
+
+## Discover Markets
+
+<Steps>
+<Step>
+
+### List Active Events
+
+```typescript
+const eventsResponse = await dflow.events.getEvents({
+  status: 'active',
+  limit: 10,
+});
+
+console.log(`Found ${eventsResponse.events.length} active events`);
+```
+
+</Step>
+<Step>
+
+### Get Event Details
+
+```typescript
+// Get a specific event with its markets
+const event = await dflow.events.getEvent('BTCD-25DEC0313', true);
+
+console.log(`Event: ${event.title}`);
+console.log(`Markets: ${event.markets?.length}`);
+```
+
+</Step>
+<Step>
+
+### Browse Markets
+
+```typescript
+const marketsResponse = await dflow.markets.getMarkets({
+  status: 'active',
+  eventTicker: 'BTCD-25DEC0313',
+});
+
+for (const market of marketsResponse.markets) {
+  console.log(`${market.ticker}: YES=${market.yesPrice}, NO=${market.noPrice}`);
+}
+```
+
+</Step>
+</Steps>
+
+## Get a Quote
+
+Before executing a trade, get a quote to see the expected output:
+
+```typescript
+import { USDC_MINT } from 'dflow-sdk';
+
+const quote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: market.accounts.usdc.yesMint, // YES token mint
+  amount: 1000000, // 1 USDC (6 decimals)
+  slippageBps: 50, // 0.5% slippage
+});
+
+console.log(`Input: ${quote.inAmount}`);
+console.log(`Output: ${quote.outAmount}`);
+console.log(`Price Impact: ${quote.priceImpactPct}%`);
+```
+
+## Execute a Swap
+
+To execute a swap, you'll need to sign and send a transaction:
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { signSendAndConfirm, USDC_MINT } from 'dflow-sdk';
+
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your secret key */);
+
+// Create the swap transaction
+const swap = await dflow.swap.createSwap({
+  inputMint: USDC_MINT,
+  outputMint: market.accounts.usdc.yesMint,
+  amount: 1000000, // 1 USDC
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+});
+
+// Sign and send
+const result = await signSendAndConfirm(
+  connection,
+  swap.transaction,
+  keypair,
+  'confirmed'
+);
+
+console.log(`Transaction: ${result.signature}`);
+```
+
+<Callout type="warn">
+  Never expose your private keys in production code. Use secure key management practices.
+</Callout>
+
+## Real-time Updates
+
+Subscribe to price updates via WebSocket:
+
+```typescript
+// Connect to WebSocket
+await dflow.ws.connect();
+
+// Subscribe to a market
+dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99']);
+
+// Handle updates
+dflow.ws.onPrice((update) => {
+  console.log(`${update.ticker}: YES=${update.yesPrice} NO=${update.noPrice}`);
+});
+
+// Later: disconnect
+dflow.ws.disconnect();
+```
+
+## Complete Example
+
+Here's a full example that ties everything together:
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import {
+  DFlowClient,
+  USDC_MINT,
+  signSendAndConfirm,
+  getUserPositions,
+} from 'dflow-sdk';
+
+async function tradePredictionMarket() {
+  const dflow = new DFlowClient();
+  const connection = new Connection('https://api.mainnet-beta.solana.com');
+  const keypair = Keypair.fromSecretKey(/* your key */);
+
+  // 1. Find a market
+  const events = await dflow.events.getEvents({ status: 'active', limit: 1 });
+  const market = events.events[0].markets?.[0];
+  
+  if (!market) throw new Error('No market found');
+
+  // 2. Get a quote
+  const quote = await dflow.swap.getQuote({
+    inputMint: USDC_MINT,
+    outputMint: market.accounts.usdc.yesMint,
+    amount: 1000000,
+  });
+
+  console.log(`Buying ${quote.outAmount} YES tokens for ${quote.inAmount} USDC`);
+
+  // 3. Execute the swap
+  const swap = await dflow.swap.createSwap({
+    inputMint: USDC_MINT,
+    outputMint: market.accounts.usdc.yesMint,
+    amount: 1000000,
+    slippageBps: 50,
+    userPublicKey: keypair.publicKey.toBase58(),
+  });
+
+  const result = await signSendAndConfirm(connection, swap.transaction, keypair);
+  console.log(`Trade executed: ${result.signature}`);
+
+  // 4. Check positions
+  const positions = await getUserPositions(connection, keypair.publicKey, dflow.markets);
+  console.log('Your positions:', positions);
+}
+```
+
+## Next Steps
+
+- Learn about [Client Configuration](/docs/api-reference/client) options
+- Explore the [Events API](/docs/api-reference/events) for market discovery
+- Understand [Imperative vs Declarative](/docs/api-reference/intent) swaps
+- Set up [WebSocket](/docs/api-reference/websocket) for real-time data

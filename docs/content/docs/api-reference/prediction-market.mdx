@@ -1,0 +1,106 @@
+---
+title: Prediction Market API
+description: Initialize new prediction markets on-chain
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Prediction Market API
+
+The Prediction Market API provides utilities for initializing new prediction markets on-chain.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const predictionMarket = dflow.predictionMarket;
+```
+
+## Methods
+
+### initializeMarket
+
+Initialize a new prediction market.
+
+```typescript
+import { USDC_MINT } from 'dflow-sdk';
+
+const init = await dflow.predictionMarket.initializeMarket({
+  marketTicker: 'MY-MARKET-TICKER',
+  userPublicKey: wallet.publicKey.toBase58(),
+  settlementMint: USDC_MINT, // Optional, defaults to USDC
+});
+
+console.log(`Transaction: ${init.transaction}`);
+console.log(`YES Mint: ${init.yesMint}`);
+console.log(`NO Mint: ${init.noMint}`);
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `marketTicker` | `string` | Yes | Unique market ticker identifier |
+| `userPublicKey` | `string` | Yes | Initializer's wallet public key |
+| `settlementMint` | `string` | No | Settlement token (default: USDC) |
+
+**Returns:**
+
+```typescript
+interface InitializeMarketResponse {
+  transaction: string; // Base64 encoded transaction
+  yesMint: string;     // Address of YES outcome token
+  noMint: string;      // Address of NO outcome token
+}
+```
+
+<Callout type="warn">
+  Market initialization typically requires specific permissions or roles within the DFlow system. Contact DFlow for access to market creation.
+</Callout>
+
+---
+
+## Example
+
+### Initialize and Execute
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { DFlowClient, USDC_MINT, signSendAndConfirm } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your key */);
+
+// Initialize the market
+const init = await dflow.predictionMarket.initializeMarket({
+  marketTicker: 'CUSTOM-MARKET-001',
+  userPublicKey: keypair.publicKey.toBase58(),
+  settlementMint: USDC_MINT,
+});
+
+console.log('Market initialized:');
+console.log(`  YES Token: ${init.yesMint}`);
+console.log(`  NO Token: ${init.noMint}`);
+
+// Sign and submit the transaction
+const result = await signSendAndConfirm(
+  connection,
+  init.transaction,
+  keypair,
+  'confirmed'
+);
+
+console.log(`Transaction confirmed: ${result.signature}`);
+```
+
+## Understanding Outcome Tokens
+
+When a prediction market is initialized, two outcome tokens are created:
+
+| Token | Purpose |
+|-------|---------|
+| **YES Token** | Redeemable for 1 unit if the outcome is YES |
+| **NO Token** | Redeemable for 1 unit if the outcome is NO |
+
+These tokens use the Solana TOKEN_2022 program and can be traded like any SPL token.

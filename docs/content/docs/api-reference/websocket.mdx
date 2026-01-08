@@ -1,0 +1,266 @@
+---
+title: WebSocket API
+description: Real-time subscriptions for prices, trades, and orderbook updates
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# WebSocket API
+
+The WebSocket API provides real-time subscriptions for market data including prices, trades, and orderbook updates.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const ws = dflow.ws;
+```
+
+## Connection
+
+### connect
+
+Establish a WebSocket connection.
+
+```typescript
+await dflow.ws.connect();
+console.log('Connected:', dflow.ws.isConnected);
+```
+
+### disconnect
+
+Close the WebSocket connection.
+
+```typescript
+dflow.ws.disconnect();
+```
+
+### isConnected
+
+Check connection status.
+
+```typescript
+if (dflow.ws.isConnected) {
+  console.log('WebSocket is connected');
+}
+```
+
+---
+
+## Subscriptions
+
+### Price Updates
+
+Subscribe to real-time price updates.
+
+```typescript
+// Subscribe to specific markets
+dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99', 'ANOTHER-MARKET']);
+
+// Subscribe to all markets
+dflow.ws.subscribeAllPrices();
+
+// Handle updates
+const unsubscribe = dflow.ws.onPrice((update) => {
+  console.log(`${update.ticker}: YES=${update.yesPrice} NO=${update.noPrice}`);
+});
+
+// Later: unsubscribe
+unsubscribe();
+```
+
+**PriceUpdate object:**
+
+```typescript
+interface PriceUpdate {
+  channel: 'prices';
+  ticker: string;
+  yesPrice: number;
+  noPrice: number;
+  timestamp: string;
+}
+```
+
+---
+
+### Trade Updates
+
+Subscribe to real-time trades.
+
+```typescript
+// Subscribe to specific markets
+dflow.ws.subscribeTrades(['BTCD-25DEC0313-T92749.99']);
+
+// Subscribe to all trades
+dflow.ws.subscribeAllTrades();
+
+// Handle updates
+dflow.ws.onTrade((trade) => {
+  console.log(`Trade: ${trade.side} @ ${trade.price} - ${trade.quantity} shares`);
+});
+```
+
+**TradeUpdate object:**
+
+```typescript
+interface TradeUpdate {
+  channel: 'trades';
+  ticker: string;
+  side: 'yes' | 'no';
+  price: number;
+  quantity: number;
+  timestamp: string;
+}
+```
+
+---
+
+### Orderbook Updates
+
+Subscribe to real-time orderbook changes.
+
+```typescript
+// Subscribe to specific markets
+dflow.ws.subscribeOrderbook(['BTCD-25DEC0313-T92749.99']);
+
+// Subscribe to all orderbooks
+dflow.ws.subscribeAllOrderbook();
+
+// Handle updates
+dflow.ws.onOrderbook((book) => {
+  console.log(`Orderbook update for ${book.ticker}`);
+  console.log(`YES Bids: ${book.yesBid?.length}, Asks: ${book.yesAsk?.length}`);
+});
+```
+
+**OrderbookUpdate object:**
+
+```typescript
+interface OrderbookUpdate {
+  channel: 'orderbook';
+  ticker: string;
+  yesBid: OrderbookLevel[] | null;
+  yesAsk: OrderbookLevel[] | null;
+  noBid: OrderbookLevel[] | null;
+  noAsk: OrderbookLevel[] | null;
+}
+```
+
+---
+
+### Unsubscribe
+
+Stop receiving updates for a channel.
+
+```typescript
+// Unsubscribe from specific markets
+dflow.ws.unsubscribe('prices', ['BTCD-25DEC0313-T92749.99']);
+
+// Unsubscribe from all on a channel
+dflow.ws.unsubscribe('prices');
+```
+
+---
+
+## Event Handlers
+
+### onError
+
+Handle WebSocket errors.
+
+```typescript
+dflow.ws.onError((error) => {
+  console.error('WebSocket error:', error.message);
+});
+```
+
+### onClose
+
+Handle connection close events.
+
+```typescript
+dflow.ws.onClose((event) => {
+  console.log('WebSocket closed:', event.code, event.reason);
+});
+```
+
+---
+
+## Configuration
+
+Configure WebSocket behavior at client initialization:
+
+```typescript
+const dflow = new DFlowClient({
+  wsOptions: {
+    url: 'wss://custom-websocket-url',
+    reconnect: true,           // Auto-reconnect (default: true)
+    reconnectInterval: 5000,   // Milliseconds between attempts (default: 5000)
+    maxReconnectAttempts: 10,  // Max attempts (default: 10)
+  },
+});
+```
+
+---
+
+## Complete Example
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+
+async function streamMarketData() {
+  // Connect
+  await dflow.ws.connect();
+  console.log('Connected to WebSocket');
+
+  // Handle errors
+  dflow.ws.onError((error) => {
+    console.error('Error:', error.message);
+  });
+
+  // Handle disconnection
+  dflow.ws.onClose(() => {
+    console.log('Disconnected');
+  });
+
+  // Subscribe to prices
+  const market = 'BTCD-25DEC0313-T92749.99';
+  dflow.ws.subscribePrices([market]);
+
+  // Handle price updates
+  dflow.ws.onPrice((update) => {
+    const time = new Date(update.timestamp).toLocaleTimeString();
+    console.log(`[${time}] ${update.ticker}`);
+    console.log(`  YES: $${update.yesPrice.toFixed(2)}`);
+    console.log(`  NO: $${update.noPrice.toFixed(2)}`);
+  });
+
+  // Subscribe to trades
+  dflow.ws.subscribeTrades([market]);
+
+  dflow.ws.onTrade((trade) => {
+    console.log(`Trade: ${trade.side.toUpperCase()} ${trade.quantity} @ $${trade.price}`);
+  });
+
+  // Run for 60 seconds
+  await new Promise((resolve) => setTimeout(resolve, 60000));
+
+  // Cleanup
+  dflow.ws.disconnect();
+}
+
+streamMarketData();
+```
+
+<Callout type="info">
+  The WebSocket automatically reconnects on disconnection. You can disable this by setting `reconnect: false` in options.
+</Callout>
+
+## Best Practices
+
+1. **Single Connection**: Use one WebSocket connection per client instance
+2. **Unsubscribe When Done**: Clean up subscriptions to reduce bandwidth
+3. **Handle Reconnection**: Your callbacks persist through reconnections
+4. **Error Handling**: Always set up error handlers for production

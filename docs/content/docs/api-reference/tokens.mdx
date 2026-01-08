@@ -1,0 +1,116 @@
+---
+title: Tokens API
+description: Get available tokens and token information
+---
+
+# Tokens API
+
+The Tokens API provides information about tradeable tokens on DFlow.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const tokens = dflow.tokens;
+```
+
+## Methods
+
+### getTokens
+
+Get a list of available tokens.
+
+```typescript
+const tokens = await dflow.tokens.getTokens();
+
+for (const token of tokens) {
+  console.log(`${token.symbol}: ${token.mint}`);
+}
+```
+
+**Returns:** `Token[]`
+
+---
+
+### getTokensWithDecimals
+
+Get tokens with decimal precision information.
+
+```typescript
+const tokens = await dflow.tokens.getTokensWithDecimals();
+
+for (const token of tokens) {
+  console.log(`${token.symbol}: ${token.decimals} decimals`);
+}
+```
+
+**Returns:** `TokenWithDecimals[]`
+
+---
+
+## Token Object
+
+```typescript
+interface Token {
+  mint: string;
+  symbol: string;
+  name: string;
+  logoURI?: string;
+}
+
+interface TokenWithDecimals extends Token {
+  decimals: number;
+}
+```
+
+## Examples
+
+### List All Tokens
+
+```typescript
+const tokens = await dflow.tokens.getTokens();
+
+console.log('Available Tokens:');
+for (const token of tokens) {
+  console.log(`  ${token.symbol} - ${token.name}`);
+  console.log(`    Mint: ${token.mint}`);
+}
+```
+
+### Find Token by Symbol
+
+```typescript
+const tokens = await dflow.tokens.getTokens();
+
+const usdc = tokens.find(t => t.symbol === 'USDC');
+if (usdc) {
+  console.log(`USDC Mint: ${usdc.mint}`);
+}
+```
+
+### Calculate Amounts with Decimals
+
+```typescript
+const tokensWithDecimals = await dflow.tokens.getTokensWithDecimals();
+
+const usdc = tokensWithDecimals.find(t => t.symbol === 'USDC');
+
+if (usdc) {
+  const humanAmount = 100; // $100
+  const rawAmount = humanAmount * Math.pow(10, usdc.decimals);
+  
+  console.log(`$${humanAmount} USDC = ${rawAmount} raw units`);
+}
+```
+
+## Common Token Constants
+
+The SDK exports common token mint addresses:
+
+```typescript
+import { USDC_MINT, SOL_MINT, OUTCOME_TOKEN_DECIMALS } from 'dflow-sdk';
+
+console.log(`USDC: ${USDC_MINT}`);
+console.log(`SOL: ${SOL_MINT}`);
+console.log(`Outcome tokens use ${OUTCOME_TOKEN_DECIMALS} decimals`);
+```

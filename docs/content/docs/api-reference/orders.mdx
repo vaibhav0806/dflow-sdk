@@ -1,0 +1,180 @@
+---
+title: Orders API
+description: Manage orders and check order status
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Orders API
+
+The Orders API provides functionality for creating orders and checking order status.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const orders = dflow.orders;
+```
+
+## Methods
+
+### getOrder
+
+Get an order quote and transaction for execution.
+
+```typescript
+import { USDC_MINT } from 'dflow-sdk';
+
+const order = await dflow.orders.getOrder({
+  inputMint: USDC_MINT,
+  outputMint: market.accounts.usdc.yesMint,
+  amount: 1000000, // 1 USDC (6 decimals)
+  slippageBps: 50, // 0.5%
+  userPublicKey: wallet.publicKey.toBase58(),
+  platformFeeBps: 10, // Optional: platform fee
+  platformFeeAccount: 'fee-account-address', // Optional
+});
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `inputMint` | `string` | Yes | Input token mint address |
+| `outputMint` | `string` | Yes | Output token mint address |
+| `amount` | `number` | Yes | Amount in smallest units |
+| `slippageBps` | `number` | No | Slippage tolerance in basis points |
+| `userPublicKey` | `string` | Yes | User's wallet public key |
+| `platformFeeBps` | `number` | No | Platform fee in basis points |
+| `platformFeeAccount` | `string` | No | Account to receive platform fees |
+
+**Returns:**
+
+```typescript
+interface OrderResponse {
+  transaction: string; // Base64 encoded transaction
+  inAmount: string;
+  outAmount: string;
+  priceImpactPct: number;
+}
+```
+
+---
+
+### getOrderStatus
+
+Check the status of an order by transaction signature.
+
+```typescript
+const status = await dflow.orders.getOrderStatus(signature);
+
+console.log(`Order status: ${status.status}`);
+```
+
+**Returns:**
+
+```typescript
+interface OrderStatus {
+  status: 'open' | 'closed' | 'failed' | 'pendingClose';
+  signature: string;
+}
+```
+
+**Status meanings:**
+
+| Status | Description |
+|--------|-------------|
+| `open` | Order is still processing |
+| `closed` | Order completed successfully |
+| `failed` | Order failed to execute |
+| `pendingClose` | Order is being finalized |
+
+---
+
+## Examples
+
+### Create and Execute an Order
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { DFlowClient, USDC_MINT, signSendAndConfirm } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your key */);
+
+// Get the market
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+const account = market.accounts.usdc;
+
+// Create order
+const order = await dflow.orders.getOrder({
+  inputMint: USDC_MINT,
+  outputMint: account.yesMint,
+  amount: 1000000, // 1 USDC
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+});
+
+console.log(`Expected output: ${order.outAmount}`);
+console.log(`Price impact: ${order.priceImpactPct}%`);
+
+// Execute the order
+const result = await signSendAndConfirm(
+  connection,
+  order.transaction,
+  keypair,
+  'confirmed'
+);
+
+console.log(`Order executed: ${result.signature}`);
+```
+
+### Poll for Order Completion
+
+```typescript
+async function waitForOrder(
+  dflow: DFlowClient,
+  signature: string,
+  maxAttempts = 30
+): Promise<OrderStatus> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const status = await dflow.orders.getOrderStatus(signature);
+    
+    if (status.status === 'closed' || status.status === 'failed') {
+      return status;
+    }
+    
+    // Wait 1 second before checking again
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  
+  throw new Error('Order status check timed out');
+}
+
+// Usage
+const status = await waitForOrder(dflow, signature);
+if (status.status === 'closed') {
+  console.log('Order completed successfully!');
+} else {
+  console.log('Order failed');
+}
+```
+
+### Add Platform Fees
+
+<Callout type="info">
+  Platform fees allow you to monetize trades through your application. The fee is deducted from the trade and sent to your specified account.
+</Callout>
+
+```typescript
+const order = await dflow.orders.getOrder({
+  inputMint: USDC_MINT,
+  outputMint: account.yesMint,
+  amount: 1000000,
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+  platformFeeBps: 25, // 0.25% fee
+  platformFeeAccount: 'your-fee-account-public-key',
+});
+```

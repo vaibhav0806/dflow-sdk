@@ -1,0 +1,78 @@
+---
+title: Installation
+description: Install the DFlow SDK in your project
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Installation
+
+Install the DFlow SDK using your preferred package manager.
+
+<Tabs items={['pnpm', 'npm', 'yarn', 'bun']}>
+  <Tab value="pnpm">
+    ```bash
+    pnpm add dflow-sdk
+    ```
+  </Tab>
+  <Tab value="npm">
+    ```bash
+    npm install dflow-sdk
+    ```
+  </Tab>
+  <Tab value="yarn">
+    ```bash
+    yarn add dflow-sdk
+    ```
+  </Tab>
+  <Tab value="bun">
+    ```bash
+    bun add dflow-sdk
+    ```
+  </Tab>
+</Tabs>
+
+## Requirements
+
+- **Node.js** 18 or higher
+- **TypeScript** 5.0+ (recommended)
+
+## Peer Dependencies
+
+The SDK uses Solana libraries internally. If you need to interact with the Solana blockchain directly (signing transactions, reading positions), you may want to install:
+
+```bash
+pnpm add @solana/web3.js @solana/spl-token
+```
+
+<Callout type="info">
+  These packages are included as dependencies in the SDK, but you may want to install them explicitly for type definitions and direct usage.
+</Callout>
+
+## Verify Installation
+
+Create a simple test file to verify the installation:
+
+```typescript title="test.ts"
+import { DFlowClient } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+
+async function test() {
+  const series = await dflow.series.getSeries();
+  console.log(`Found ${series.length} series`);
+}
+
+test();
+```
+
+Run it:
+
+```bash
+npx tsx test.ts
+```
+
+## Next Steps
+
+Once installed, head to the [Quickstart](/docs/getting-started/quickstart) guide to make your first API calls.
