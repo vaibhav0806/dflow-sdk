@@ -1,0 +1,108 @@
+---
+title: Series API
+description: Access series information for grouped prediction markets
+---
+
+# Series API
+
+The Series API provides access to series information. Series are logical groupings of related events (e.g., "Bitcoin Daily" series containing daily Bitcoin price events).
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const series = dflow.series;
+```
+
+## Methods
+
+### getSeries
+
+Get all available series.
+
+```typescript
+const allSeries = await dflow.series.getSeries();
+
+for (const s of allSeries) {
+  console.log(`${s.ticker}: ${s.title}`);
+}
+```
+
+**Returns:** `Series[]`
+
+---
+
+### getSeriesByTicker
+
+Get a specific series by ticker.
+
+```typescript
+const series = await dflow.series.getSeriesByTicker('KXBTC');
+
+console.log(`Title: ${series.title}`);
+console.log(`Description: ${series.description}`);
+```
+
+---
+
+## Series Object
+
+```typescript
+interface Series {
+  ticker: string;
+  title: string;
+  description?: string;
+  category?: string;
+  frequency?: string;
+  tags?: string[];
+}
+```
+
+## Examples
+
+### List All Series
+
+```typescript
+const allSeries = await dflow.series.getSeries();
+
+console.log(`Found ${allSeries.length} series:\n`);
+
+for (const series of allSeries) {
+  console.log(`📊 ${series.title}`);
+  console.log(`   Ticker: ${series.ticker}`);
+  if (series.category) {
+    console.log(`   Category: ${series.category}`);
+  }
+  console.log('');
+}
+```
+
+### Get Events for a Series
+
+```typescript
+// First, get the series
+const series = await dflow.series.getSeriesByTicker('KXBTC');
+console.log(`Series: ${series.title}`);
+
+// Then get events in this series
+const events = await dflow.events.getEvents({
+  seriesTicker: series.ticker,
+  status: 'active',
+});
+
+console.log(`\nActive events in ${series.ticker}:`);
+for (const event of events.events) {
+  console.log(`  - ${event.title}`);
+}
+```
+
+### Get Markets by Series
+
+```typescript
+const markets = await dflow.markets.getMarkets({
+  seriesTicker: 'KXBTC',
+  status: 'active',
+});
+
+console.log(`Found ${markets.markets.length} active markets in KXBTC series`);
+```

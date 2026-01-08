@@ -1,0 +1,156 @@
+---
+title: Trades API
+description: Query historical trade data for prediction markets
+---
+
+# Trades API
+
+The Trades API provides access to historical trade data for prediction markets.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const trades = dflow.trades;
+```
+
+## Methods
+
+### getTrades
+
+Get historical trades with optional filters.
+
+```typescript
+const response = await dflow.trades.getTrades({
+  marketTicker: 'BTCD-25DEC0313-T92749.99',
+  limit: 100,
+});
+
+for (const trade of response.trades) {
+  console.log(`${trade.side} @ ${trade.price} - ${trade.quantity} shares`);
+}
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `marketTicker` | `string` | No | Filter by market ticker |
+| `limit` | `number` | No | Maximum trades to return |
+| `cursor` | `string` | No | Pagination cursor |
+
+---
+
+### getTradesByMint
+
+Get trades by outcome token mint address.
+
+```typescript
+const response = await dflow.trades.getTradesByMint('mint-address');
+```
+
+---
+
+## Trade Object
+
+```typescript
+interface Trade {
+  id: string;
+  marketTicker: string;
+  side: 'yes' | 'no';
+  price: number;
+  quantity: number;
+  timestamp: string;
+  taker?: string;
+  maker?: string;
+}
+
+interface TradesResponse {
+  trades: Trade[];
+  cursor?: string;
+}
+```
+
+## Examples
+
+### Get Recent Trades
+
+```typescript
+const response = await dflow.trades.getTrades({
+  marketTicker: 'BTCD-25DEC0313-T92749.99',
+  limit: 20,
+});
+
+console.log('Recent Trades:');
+for (const trade of response.trades) {
+  const time = new Date(trade.timestamp).toLocaleTimeString();
+  console.log(`[${time}] ${trade.side.toUpperCase()} ${trade.quantity} @ $${trade.price}`);
+}
+```
+
+### Calculate Volume
+
+```typescript
+const response = await dflow.trades.getTrades({
+  marketTicker: 'BTCD-25DEC0313-T92749.99',
+  limit: 1000,
+});
+
+const totalVolume = response.trades.reduce(
+  (sum, trade) => sum + trade.price * trade.quantity,
+  0
+);
+
+const yesVolume = response.trades
+  .filter(t => t.side === 'yes')
+  .reduce((sum, t) => sum + t.price * t.quantity, 0);
+
+const noVolume = response.trades
+  .filter(t => t.side === 'no')
+  .reduce((sum, t) => sum + t.price * t.quantity, 0);
+
+console.log(`Total Volume: $${totalVolume.toLocaleString()}`);
+console.log(`YES Volume: $${yesVolume.toLocaleString()}`);
+console.log(`NO Volume: $${noVolume.toLocaleString()}`);
+```
+
+### Paginate Through All Trades
+
+```typescript
+async function getAllTrades(marketTicker: string): Promise<Trade[]> {
+  const allTrades: Trade[] = [];
+  let cursor: string | undefined;
+
+  do {
+    const response = await dflow.trades.getTrades({
+      marketTicker,
+      limit: 100,
+      cursor,
+    });
+    
+    allTrades.push(...response.trades);
+    cursor = response.cursor;
+  } while (cursor);
+
+  return allTrades;
+}
+
+const trades = await getAllTrades('BTCD-25DEC0313-T92749.99');
+console.log(`Total trades: ${trades.length}`);
+```
+
+## Real-time Trades
+
+For real-time trade updates, use the WebSocket API:
+
+```typescript
+await dflow.ws.connect();
+
+dflow.ws.subscribeTrades(['BTCD-25DEC0313-T92749.99']);
+
+dflow.ws.onTrade((trade) => {
+  console.log(`New trade: ${trade.side} @ ${trade.price}`);
+});
+```
+
+See the [WebSocket API](/docs/api-reference/websocket) for more details.

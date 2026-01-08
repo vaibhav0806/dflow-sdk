@@ -1,0 +1,282 @@
+---
+title: Solana Helpers
+description: Transaction signing, position tracking, and redemption utilities
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Solana Helpers
+
+The SDK provides utility functions for common Solana operations including transaction signing, position tracking, and redemption calculations.
+
+## Transaction Functions
+
+### signAndSendTransaction
+
+Sign and send a transaction to the network.
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { signAndSendTransaction } from 'dflow-sdk';
+
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your key */);
+
+// order.transaction is base64 encoded
+const signature = await signAndSendTransaction(
+  connection,
+  order.transaction,
+  keypair
+);
+
+console.log(`Transaction sent: ${signature}`);
+```
+
+---
+
+### waitForConfirmation
+
+Wait for a transaction to be confirmed.
+
+```typescript
+import { waitForConfirmation } from 'dflow-sdk';
+
+const confirmation = await waitForConfirmation(
+  connection,
+  signature,
+  'confirmed' // or 'finalized'
+);
+
+if (confirmation.value.err) {
+  console.error('Transaction failed:', confirmation.value.err);
+} else {
+  console.log('Transaction confirmed!');
+}
+```
+
+---
+
+### signSendAndConfirm
+
+Combine signing, sending, and confirming in one call.
+
+```typescript
+import { signSendAndConfirm } from 'dflow-sdk';
+
+const result = await signSendAndConfirm(
+  connection,
+  swap.transaction,
+  keypair,
+  'confirmed'
+);
+
+console.log(`Signature: ${result.signature}`);
+console.log(`Confirmed: ${!result.confirmation.value.err}`);
+```
+
+**Returns:**
+
+```typescript
+interface SignSendConfirmResult {
+  signature: string;
+  confirmation: RpcResponseAndContext<SignatureResult>;
+}
+```
+
+---
+
+## Position Functions
+
+### getTokenBalances
+
+Get all TOKEN_2022 token balances for a wallet.
+
+```typescript
+import { getTokenBalances } from 'dflow-sdk';
+
+const balances = await getTokenBalances(connection, walletPublicKey);
+
+for (const token of balances) {
+  console.log(`Mint: ${token.mint}`);
+  console.log(`  Balance: ${token.balance}`);
+  console.log(`  Decimals: ${token.decimals}`);
+}
+```
+
+**Returns:** `TokenBalance[]`
+
+```typescript
+interface TokenBalance {
+  mint: string;
+  rawBalance: string;  // Raw amount as string
+  balance: number;     // UI amount with decimals
+  decimals: number;
+}
+```
+
+<Callout type="info">
+  This function specifically queries TOKEN_2022 program tokens, which is what DFlow uses for outcome tokens.
+</Callout>
+
+---
+
+### getUserPositions
+
+Get all prediction market positions for a wallet.
+
+```typescript
+import { getUserPositions } from 'dflow-sdk';
+
+const positions = await getUserPositions(
+  connection,
+  walletPublicKey,
+  dflow.markets // Pass the markets API
+);
+
+for (const position of positions) {
+  console.log(`Token: ${position.mint}`);
+  console.log(`  Position: ${position.position}`); // 'YES', 'NO', or 'UNKNOWN'
+  console.log(`  Balance: ${position.balance}`);
+  
+  if (position.market) {
+    console.log(`  Market: ${position.market.title}`);
+  }
+}
+```
+
+**Returns:** `UserPosition[]`
+
+```typescript
+interface UserPosition {
+  mint: string;
+  balance: number;
+  decimals: number;
+  position: 'YES' | 'NO' | 'UNKNOWN';
+  market: Market | null;
+}
+```
+
+---
+
+## Redemption Functions
+
+### isRedemptionEligible
+
+Check if a position is eligible for redemption.
+
+```typescript
+import { isRedemptionEligible } from 'dflow-sdk';
+
+for (const position of positions) {
+  if (position.market) {
+    const eligible = isRedemptionEligible(position.market, position.mint);
+    
+    if (eligible) {
+      console.log(`Position ${position.mint} can be redeemed!`);
+    }
+  }
+}
+```
+
+**Redemption eligibility rules:**
+
+- Market status must be `determined` or `finalized`
+- Redemption status must be `open`
+- Position must be on the winning side (YES if result is 'yes', NO if result is 'no')
+- For scalar markets, both sides may be eligible
+
+---
+
+### calculateScalarPayout
+
+Calculate payout for scalar market positions.
+
+```typescript
+import { calculateScalarPayout } from 'dflow-sdk';
+
+const payout = calculateScalarPayout(
+  position.market,
+  position.mint,
+  position.balance
+);
+
+console.log(`Payout for ${position.balance} tokens: ${payout}`);
+```
+
+<Callout type="info">
+  Scalar markets settle at a percentage between 0-100%. For example, if Bitcoin ends at $95,000 in a $90,000-$100,000 range market, YES tokens might pay 50%.
+</Callout>
+
+---
+
+## Complete Example
+
+```typescript
+import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import {
+  DFlowClient,
+  getUserPositions,
+  isRedemptionEligible,
+  calculateScalarPayout,
+} from 'dflow-sdk';
+
+async function checkPositions() {
+  const dflow = new DFlowClient();
+  const connection = new Connection('https://api.mainnet-beta.solana.com');
+  const walletPubkey = new PublicKey('your-wallet-address');
+
+  // Get all prediction market positions
+  const positions = await getUserPositions(
+    connection,
+    walletPubkey,
+    dflow.markets
+  );
+
+  console.log(`Found ${positions.length} positions:\n`);
+
+  for (const position of positions) {
+    console.log(`Position: ${position.position}`);
+    console.log(`  Balance: ${position.balance}`);
+    
+    if (position.market) {
+      console.log(`  Market: ${position.market.title}`);
+      console.log(`  Status: ${position.market.status}`);
+      console.log(`  Result: ${position.market.result || 'pending'}`);
+
+      // Check if redeemable
+      if (isRedemptionEligible(position.market, position.mint)) {
+        console.log('  ✅ ELIGIBLE FOR REDEMPTION');
+        
+        // For scalar markets, calculate payout
+        const payout = calculateScalarPayout(
+          position.market,
+          position.mint,
+          position.balance
+        );
+        if (payout > 0) {
+          console.log(`  Estimated payout: ${payout}`);
+        }
+      }
+    }
+    console.log('');
+  }
+}
+```
+
+## Commitment Levels
+
+When confirming transactions, choose the appropriate commitment:
+
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| `processed` | Fastest, less reliable | Debugging |
+| `confirmed` | Good balance of speed/safety | Most trades |
+| `finalized` | Most secure, slower | Critical operations |
+
+```typescript
+// For trading, 'confirmed' is usually sufficient
+const result = await signSendAndConfirm(connection, tx, keypair, 'confirmed');
+
+// For critical operations like large redemptions
+const result = await signSendAndConfirm(connection, tx, keypair, 'finalized');
+```

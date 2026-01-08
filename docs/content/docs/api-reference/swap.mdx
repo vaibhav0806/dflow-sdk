@@ -1,0 +1,232 @@
+---
+title: Swap API (Imperative)
+description: Execute token swaps with full control over transaction execution
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Swap API (Imperative)
+
+The Swap API provides imperative swaps, giving traders full control over route planning and transaction execution. Unlike intent-based swaps, imperative swaps return a complete transaction that you sign and submit.
+
+<Callout type="info">
+  **Imperative vs Declarative**: Imperative swaps give you the exact route before signing. For hands-off trading with potentially better execution, see [Intent API](/docs/api-reference/intent).
+</Callout>
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const swap = dflow.swap;
+```
+
+## Methods
+
+### getQuote
+
+Get a quote for a swap without creating a transaction.
+
+```typescript
+import { USDC_MINT } from 'dflow-sdk';
+
+const quote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: 'yes-mint-address',
+  amount: 1000000, // 1 USDC
+  slippageBps: 50, // 0.5%
+});
+
+console.log(`Input: ${quote.inAmount}`);
+console.log(`Output: ${quote.outAmount}`);
+console.log(`Price Impact: ${quote.priceImpactPct}%`);
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `inputMint` | `string` | Yes | Input token mint address |
+| `outputMint` | `string` | Yes | Output token mint address |
+| `amount` | `number` | Yes | Amount in smallest units |
+| `slippageBps` | `number` | No | Slippage tolerance (default: 50 = 0.5%) |
+
+**Returns:** `SwapQuote`
+
+```typescript
+interface SwapQuote {
+  inputMint: string;
+  outputMint: string;
+  inAmount: string;
+  outAmount: string;
+  priceImpactPct: number;
+  routePlan?: RoutePlan[];
+}
+```
+
+---
+
+### createSwap
+
+Create a swap transaction ready for signing.
+
+```typescript
+const swap = await dflow.swap.createSwap({
+  inputMint: USDC_MINT,
+  outputMint: 'yes-mint-address',
+  amount: 1000000,
+  slippageBps: 50,
+  userPublicKey: wallet.publicKey.toBase58(),
+  wrapUnwrapSol: true, // Auto wrap/unwrap SOL
+  priorityFee: { type: 'exact', amount: 10000 },
+});
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `inputMint` | `string` | Yes | Input token mint address |
+| `outputMint` | `string` | Yes | Output token mint address |
+| `amount` | `number` | Yes | Amount in smallest units |
+| `slippageBps` | `number` | No | Slippage tolerance in basis points |
+| `userPublicKey` | `string` | Yes | User's wallet public key |
+| `wrapUnwrapSol` | `boolean` | No | Auto wrap/unwrap native SOL |
+| `priorityFee` | `PriorityFee` | No | Transaction priority fee |
+
+**Priority Fee Types:**
+
+```typescript
+// Exact priority fee
+{ type: 'exact', amount: 10000 } // lamports
+
+// Maximum priority fee (optimizer chooses)
+{ type: 'max', amount: 100000 }
+```
+
+**Returns:** `SwapResponse`
+
+```typescript
+interface SwapResponse {
+  transaction: string; // Base64 encoded transaction
+  inAmount: string;
+  outAmount: string;
+  priceImpactPct: number;
+}
+```
+
+---
+
+### getSwapInstructions
+
+Get raw swap instructions for custom transaction composition.
+
+```typescript
+const instructions = await dflow.swap.getSwapInstructions({
+  inputMint: USDC_MINT,
+  outputMint: 'yes-mint-address',
+  amount: 1000000,
+  slippageBps: 50,
+  userPublicKey: wallet.publicKey.toBase58(),
+});
+
+// Use instructions to build custom transaction
+console.log(`Setup instructions: ${instructions.setupInstructions?.length}`);
+console.log(`Swap instruction: ${instructions.swapInstruction}`);
+console.log(`Cleanup instructions: ${instructions.cleanupInstructions?.length}`);
+```
+
+<Callout type="info">
+  Use `getSwapInstructions` when you need to combine the swap with other instructions in a single transaction.
+</Callout>
+
+---
+
+## Examples
+
+### Simple Swap
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { DFlowClient, USDC_MINT, signSendAndConfirm } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your key */);
+
+// Get market info
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+const yesMint = market.accounts.usdc.yesMint;
+
+// Get quote first
+const quote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+});
+
+console.log(`Swapping ${quote.inAmount} USDC for ${quote.outAmount} YES tokens`);
+console.log(`Price impact: ${quote.priceImpactPct}%`);
+
+// Create and execute swap
+const swap = await dflow.swap.createSwap({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+});
+
+const result = await signSendAndConfirm(connection, swap.transaction, keypair);
+console.log(`Swap executed: ${result.signature}`);
+```
+
+### Swap with Priority Fee
+
+```typescript
+const swap = await dflow.swap.createSwap({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+  priorityFee: {
+    type: 'exact',
+    amount: 50000, // 0.00005 SOL
+  },
+});
+```
+
+### Swap SOL for Outcome Tokens
+
+```typescript
+import { SOL_MINT } from 'dflow-sdk';
+
+const swap = await dflow.swap.createSwap({
+  inputMint: SOL_MINT,
+  outputMint: yesMint,
+  amount: 100000000, // 0.1 SOL (9 decimals)
+  slippageBps: 100, // 1% for SOL
+  userPublicKey: keypair.publicKey.toBase58(),
+  wrapUnwrapSol: true, // Important for SOL swaps
+});
+```
+
+### Check Price Impact Before Swapping
+
+```typescript
+const quote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 10000000, // 10 USDC
+});
+
+if (quote.priceImpactPct > 1) {
+  console.warn(`High price impact: ${quote.priceImpactPct}%`);
+  console.log('Consider splitting into smaller trades');
+} else {
+  // Proceed with swap
+  const swap = await dflow.swap.createSwap({
+    // ... params
+  });
+}
+```

@@ -1,0 +1,138 @@
+---
+title: DFlowClient
+description: Configure and initialize the DFlow SDK client
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { TypeTable } from 'fumadocs-ui/components/type-table';
+
+# DFlowClient
+
+The `DFlowClient` is the main entry point for all SDK operations. It provides access to all APIs through a single unified interface.
+
+## Basic Usage
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+```
+
+## Configuration Options
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+const dflow = new DFlowClient({
+  apiKey: 'your-api-key',
+  metadataBaseUrl: 'https://prediction-markets-api.dflow.net/api/v1',
+  tradeBaseUrl: 'https://quote-api.dflow.net',
+  wsOptions: {
+    reconnect: true,
+    reconnectInterval: 5000,
+    maxReconnectAttempts: 10,
+  },
+});
+```
+
+### Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `apiKey` | `string` | - | Optional API key for higher rate limits |
+| `metadataBaseUrl` | `string` | Production URL | Base URL for Metadata API |
+| `tradeBaseUrl` | `string` | Production URL | Base URL for Trade API |
+| `wsOptions` | `WebSocketOptions` | See below | WebSocket configuration |
+
+### WebSocket Options
+
+| Property | Type | Default | Description |
+|----------|------|---------|-------------|
+| `url` | `string` | Production URL | WebSocket server URL |
+| `reconnect` | `boolean` | `true` | Auto-reconnect on disconnect |
+| `reconnectInterval` | `number` | `5000` | Milliseconds between reconnect attempts |
+| `maxReconnectAttempts` | `number` | `10` | Maximum reconnection attempts |
+
+## Available APIs
+
+Once initialized, the client provides access to all APIs:
+
+### Metadata APIs
+
+```typescript
+dflow.events      // EventsAPI - Event discovery and details
+dflow.markets     // MarketsAPI - Market data and batch queries
+dflow.orderbook   // OrderbookAPI - Order book snapshots
+dflow.trades      // TradesAPI - Trade history
+dflow.liveData    // LiveDataAPI - Real-time data feeds
+dflow.series      // SeriesAPI - Series information
+dflow.tags        // TagsAPI - Tags and categories
+dflow.sports      // SportsAPI - Sports filters
+dflow.search      // SearchAPI - Search functionality
+```
+
+### Trade APIs
+
+```typescript
+dflow.orders           // OrdersAPI - Order management
+dflow.swap             // SwapAPI - Imperative swaps
+dflow.intent           // IntentAPI - Declarative/intent swaps
+dflow.predictionMarket // PredictionMarketAPI - Market initialization
+dflow.tokens           // TokensAPI - Token information
+dflow.venues           // VenuesAPI - Trading venues
+```
+
+### WebSocket
+
+```typescript
+dflow.ws  // DFlowWebSocket - Real-time subscriptions
+```
+
+## Setting API Key Later
+
+```typescript
+const dflow = new DFlowClient();
+
+// Set API key after initialization
+dflow.setApiKey('your-api-key');
+```
+
+## Development Endpoints
+
+For testing against development environments:
+
+```typescript
+import {
+  DFlowClient,
+  DEV_METADATA_API_BASE_URL,
+  DEV_TRADE_API_BASE_URL,
+  DEV_WEBSOCKET_URL,
+} from 'dflow-sdk';
+
+const devClient = new DFlowClient({
+  metadataBaseUrl: DEV_METADATA_API_BASE_URL,
+  tradeBaseUrl: DEV_TRADE_API_BASE_URL,
+  wsOptions: {
+    url: DEV_WEBSOCKET_URL,
+  },
+});
+```
+
+<Callout type="warn">
+  Development endpoints may have different data and availability than production. Use production endpoints for live trading.
+</Callout>
+
+## Type Exports
+
+The SDK exports all types for TypeScript users:
+
+```typescript
+import type {
+  DFlowClientOptions,
+  WebSocketOptions,
+  Event,
+  Market,
+  SwapQuote,
+  // ... and more
+} from 'dflow-sdk';
+```

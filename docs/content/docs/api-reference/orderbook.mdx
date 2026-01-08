@@ -1,0 +1,136 @@
+---
+title: Orderbook API
+description: Access real-time orderbook data for prediction markets
+---
+
+# Orderbook API
+
+The Orderbook API provides access to current order book snapshots for prediction markets.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const orderbook = dflow.orderbook;
+```
+
+## Methods
+
+### getOrderbook
+
+Get the current orderbook for a market by ticker.
+
+```typescript
+const orderbook = await dflow.orderbook.getOrderbook('BTCD-25DEC0313-T92749.99');
+
+console.log('YES Side:');
+console.log(`  Bids: ${orderbook.yesBid?.length || 0} levels`);
+console.log(`  Asks: ${orderbook.yesAsk?.length || 0} levels`);
+
+console.log('NO Side:');
+console.log(`  Bids: ${orderbook.noBid?.length || 0} levels`);
+console.log(`  Asks: ${orderbook.noAsk?.length || 0} levels`);
+```
+
+---
+
+### getOrderbookByMint
+
+Get the orderbook using an outcome token mint address.
+
+```typescript
+const orderbook = await dflow.orderbook.getOrderbookByMint('mint-address');
+```
+
+---
+
+## Orderbook Structure
+
+```typescript
+interface Orderbook {
+  yesAsk: OrderbookLevel[] | null;
+  yesBid: OrderbookLevel[] | null;
+  noAsk: OrderbookLevel[] | null;
+  noBid: OrderbookLevel[] | null;
+}
+
+interface OrderbookLevel {
+  price: number;
+  quantity: number;
+}
+```
+
+## Examples
+
+### Display Orderbook
+
+```typescript
+const orderbook = await dflow.orderbook.getOrderbook('BTCD-25DEC0313-T92749.99');
+
+function displaySide(levels: OrderbookLevel[] | null, label: string) {
+  console.log(`\n${label}:`);
+  if (!levels || levels.length === 0) {
+    console.log('  No orders');
+    return;
+  }
+  
+  for (const level of levels.slice(0, 5)) { // Top 5 levels
+    console.log(`  $${level.price.toFixed(2)} - ${level.quantity} shares`);
+  }
+}
+
+displaySide(orderbook.yesBid, 'YES Bids');
+displaySide(orderbook.yesAsk, 'YES Asks');
+displaySide(orderbook.noBid, 'NO Bids');
+displaySide(orderbook.noAsk, 'NO Asks');
+```
+
+### Calculate Spread
+
+```typescript
+const orderbook = await dflow.orderbook.getOrderbook('BTCD-25DEC0313-T92749.99');
+
+const bestBid = orderbook.yesBid?.[0]?.price;
+const bestAsk = orderbook.yesAsk?.[0]?.price;
+
+if (bestBid && bestAsk) {
+  const spread = bestAsk - bestBid;
+  const spreadPct = (spread / bestAsk) * 100;
+  
+  console.log(`YES Spread: $${spread.toFixed(4)} (${spreadPct.toFixed(2)}%)`);
+}
+```
+
+### Calculate Depth
+
+```typescript
+const orderbook = await dflow.orderbook.getOrderbook('BTCD-25DEC0313-T92749.99');
+
+function calculateDepth(levels: OrderbookLevel[] | null): number {
+  if (!levels) return 0;
+  return levels.reduce((sum, level) => sum + level.price * level.quantity, 0);
+}
+
+const bidDepth = calculateDepth(orderbook.yesBid);
+const askDepth = calculateDepth(orderbook.yesAsk);
+
+console.log(`YES Bid Depth: $${bidDepth.toLocaleString()}`);
+console.log(`YES Ask Depth: $${askDepth.toLocaleString()}`);
+```
+
+## Real-time Orderbook
+
+For real-time orderbook updates, use the WebSocket API:
+
+```typescript
+await dflow.ws.connect();
+
+dflow.ws.subscribeOrderbook(['BTCD-25DEC0313-T92749.99']);
+
+dflow.ws.onOrderbook((update) => {
+  console.log(`Orderbook update for ${update.ticker}`);
+  // Process the update
+});
+```
+
+See the [WebSocket API](/docs/api-reference/websocket) for more details.

@@ -1,0 +1,184 @@
+---
+title: Events API
+description: Discover and query prediction market events
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Events API
+
+The Events API allows you to discover, search, and retrieve prediction market events. Events are containers for related markets.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const events = dflow.events;
+```
+
+## Methods
+
+### getEvent
+
+Get a single event by ticker.
+
+```typescript
+// Basic usage
+const event = await dflow.events.getEvent('BTCD-25DEC0313');
+
+// Include markets in response
+const eventWithMarkets = await dflow.events.getEvent('BTCD-25DEC0313', true);
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ticker` | `string` | Yes | Event ticker identifier |
+| `withMarkets` | `boolean` | No | Include markets in response |
+
+**Returns:** `Event`
+
+---
+
+### getEvents
+
+List events with optional filters.
+
+```typescript
+const response = await dflow.events.getEvents({
+  status: 'active',
+  limit: 50,
+  seriesTicker: 'KXBTC',
+  cursor: 'next-page-cursor',
+});
+
+console.log(response.events);    // Event[]
+console.log(response.cursor);    // Pagination cursor
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `status` | `EventStatus` | No | Filter by status: `'scheduled'`, `'active'`, `'closed'`, `'settled'` |
+| `seriesTicker` | `string` | No | Filter by series |
+| `limit` | `number` | No | Max results per page |
+| `cursor` | `string` | No | Pagination cursor |
+
+**Returns:** `EventsResponse`
+
+```typescript
+interface EventsResponse {
+  events: Event[];
+  cursor?: string;
+}
+```
+
+---
+
+### getEventForecastHistory
+
+Get forecast history for an event.
+
+```typescript
+const forecast = await dflow.events.getEventForecastHistory(
+  'KXBTC',           // Series ticker
+  'BTCD-25DEC0313'   // Event ticker
+);
+```
+
+---
+
+### getEventForecastByMint
+
+Get forecast history by mint address.
+
+```typescript
+const forecast = await dflow.events.getEventForecastByMint('mint-address');
+```
+
+---
+
+### getEventCandlesticks
+
+Get candlestick (OHLCV) data for an event.
+
+```typescript
+const candles = await dflow.events.getEventCandlesticks('BTCD-25DEC0313');
+
+for (const candle of candles) {
+  console.log(`Open: ${candle.open}, Close: ${candle.close}`);
+}
+```
+
+---
+
+## Event Object
+
+```typescript
+interface Event {
+  ticker: string;
+  title: string;
+  subtitle?: string;
+  seriesTicker: string;
+  status: EventStatus;
+  category?: string;
+  mutuallyExclusive: boolean;
+  markets?: Market[];
+  openTime?: string;
+  closeTime?: string;
+  expirationTime?: string;
+  settlementTime?: string;
+}
+
+type EventStatus = 'scheduled' | 'active' | 'closed' | 'settled';
+```
+
+## Examples
+
+### List All Active Events
+
+```typescript
+const response = await dflow.events.getEvents({ status: 'active' });
+
+for (const event of response.events) {
+  console.log(`${event.ticker}: ${event.title}`);
+}
+```
+
+### Paginate Through Events
+
+```typescript
+let cursor: string | undefined;
+const allEvents: Event[] = [];
+
+do {
+  const response = await dflow.events.getEvents({
+    status: 'active',
+    limit: 100,
+    cursor,
+  });
+  
+  allEvents.push(...response.events);
+  cursor = response.cursor;
+} while (cursor);
+
+console.log(`Total events: ${allEvents.length}`);
+```
+
+### Get Event with Markets
+
+```typescript
+const event = await dflow.events.getEvent('BTCD-25DEC0313', true);
+
+if (event.markets) {
+  for (const market of event.markets) {
+    console.log(`Market: ${market.ticker}`);
+    console.log(`  YES: ${market.yesPrice}, NO: ${market.noPrice}`);
+  }
+}
+```
+
+<Callout type="info">
+  Events contain high-level information while Markets contain specific trading details like prices and mints.
+</Callout>

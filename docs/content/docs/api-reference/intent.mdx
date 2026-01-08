@@ -1,0 +1,201 @@
+---
+title: Intent API (Declarative)
+description: Lightweight intent-based swaps with JIT routing for best execution
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Intent API (Declarative)
+
+The Intent API provides declarative swaps that defer route calculation to execution time. This approach offers less slippage, greater sandwich protection, and JIT (Just-In-Time) routing for best execution.
+
+<Callout type="info">
+  **Declarative vs Imperative**: Intent swaps express what you want to trade, and DFlow's infrastructure handles optimal execution. For full control over the route, see [Swap API](/docs/api-reference/swap).
+</Callout>
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const intent = dflow.intent;
+```
+
+## Methods
+
+### getIntentQuote
+
+Get a quote for an intent swap.
+
+```typescript
+import { USDC_MINT } from 'dflow-sdk';
+
+const quote = await dflow.intent.getIntentQuote({
+  inputMint: USDC_MINT,
+  outputMint: 'yes-mint-address',
+  amount: 1000000, // 1 USDC
+  mode: 'ExactIn', // or 'ExactOut'
+});
+
+console.log(`Estimated output: ${quote.outAmount}`);
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `inputMint` | `string` | Yes | Input token mint address |
+| `outputMint` | `string` | Yes | Output token mint address |
+| `amount` | `number` | Yes | Amount in smallest units |
+| `mode` | `'ExactIn' \| 'ExactOut'` | Yes | Trade mode |
+
+**Mode Types:**
+
+| Mode | Description |
+|------|-------------|
+| `ExactIn` | Specify exact input amount, output may vary |
+| `ExactOut` | Specify exact output amount, input may vary |
+
+---
+
+### submitIntent
+
+Submit an intent swap for execution.
+
+```typescript
+const intent = await dflow.intent.submitIntent({
+  inputMint: USDC_MINT,
+  outputMint: 'yes-mint-address',
+  amount: 1000000,
+  mode: 'ExactIn',
+  slippageBps: 50,
+  userPublicKey: wallet.publicKey.toBase58(),
+});
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `inputMint` | `string` | Yes | Input token mint address |
+| `outputMint` | `string` | Yes | Output token mint address |
+| `amount` | `number` | Yes | Amount in smallest units |
+| `mode` | `'ExactIn' \| 'ExactOut'` | Yes | Trade mode |
+| `slippageBps` | `number` | No | Max slippage tolerance |
+| `userPublicKey` | `string` | Yes | User's wallet public key |
+
+**Returns:** `IntentResponse`
+
+```typescript
+interface IntentResponse {
+  transaction: string; // Base64 encoded transaction
+  intentId: string;    // Unique intent identifier
+  estimatedOutput: string;
+}
+```
+
+---
+
+## Why Use Intents?
+
+### Benefits of Declarative Swaps
+
+1. **Better Execution**: Route is calculated at execution time, not quote time
+2. **Sandwich Protection**: Harder for MEV bots to extract value
+3. **Less Slippage**: JIT routing finds optimal paths dynamically
+4. **Simpler UX**: One transaction, no route complexity exposed
+
+### When to Use Intents
+
+- ✅ Standard trading flows
+- ✅ Mobile/wallet integrations
+- ✅ When you trust DFlow's routing
+- ✅ For time-sensitive trades
+
+### When to Use Imperative Swaps
+
+- ✅ When you need exact route preview
+- ✅ For auditing/compliance requirements
+- ✅ Custom transaction composition
+- ✅ When combining with other instructions
+
+---
+
+## Examples
+
+### ExactIn Intent
+
+Specify how much you want to spend:
+
+```typescript
+import { Connection, Keypair } from '@solana/web3.js';
+import { DFlowClient, USDC_MINT, signSendAndConfirm } from 'dflow-sdk';
+
+const dflow = new DFlowClient();
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const keypair = Keypair.fromSecretKey(/* your key */);
+
+// Get market
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+const yesMint = market.accounts.usdc.yesMint;
+
+// Submit ExactIn intent (spend exactly 1 USDC)
+const intent = await dflow.intent.submitIntent({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000, // 1 USDC
+  mode: 'ExactIn',
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+});
+
+console.log(`Intent ID: ${intent.intentId}`);
+console.log(`Estimated output: ${intent.estimatedOutput}`);
+
+// Sign and submit
+const result = await signSendAndConfirm(connection, intent.transaction, keypair);
+console.log(`Intent executed: ${result.signature}`);
+```
+
+### ExactOut Intent
+
+Specify how many tokens you want to receive:
+
+```typescript
+// I want exactly 100 YES tokens
+const intent = await dflow.intent.submitIntent({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 100000000, // 100 tokens (6 decimals)
+  mode: 'ExactOut',
+  slippageBps: 50,
+  userPublicKey: keypair.publicKey.toBase58(),
+});
+
+console.log(`Will receive: ${intent.estimatedOutput} YES tokens`);
+```
+
+### Compare Quote vs Imperative
+
+```typescript
+// Intent quote
+const intentQuote = await dflow.intent.getIntentQuote({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+  mode: 'ExactIn',
+});
+
+// Imperative quote
+const swapQuote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+});
+
+console.log(`Intent estimated output: ${intentQuote.outAmount}`);
+console.log(`Swap quoted output: ${swapQuote.outAmount}`);
+```
+
+<Callout type="info">
+  Intent quotes may show slightly better rates because the actual route is optimized at execution time.
+</Callout>

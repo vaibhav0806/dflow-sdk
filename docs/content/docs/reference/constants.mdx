@@ -1,0 +1,162 @@
+---
+title: Constants
+description: SDK constants including API URLs, token mints, and defaults
+---
+
+# Constants
+
+The SDK exports various constants for API endpoints, token addresses, and default values.
+
+## Import
+
+```typescript
+import {
+  // API URLs
+  METADATA_API_BASE_URL,
+  TRADE_API_BASE_URL,
+  WEBSOCKET_URL,
+  DEV_METADATA_API_BASE_URL,
+  DEV_TRADE_API_BASE_URL,
+  DEV_WEBSOCKET_URL,
+
+  // Token mints
+  USDC_MINT,
+  SOL_MINT,
+
+  // Trading defaults
+  DEFAULT_SLIPPAGE_BPS,
+  OUTCOME_TOKEN_DECIMALS,
+
+  // Limits
+  MAX_BATCH_SIZE,
+  MAX_FILTER_ADDRESSES,
+} from 'dflow-sdk';
+```
+
+## API URLs
+
+### Production
+
+| Constant | Value |
+|----------|-------|
+| `METADATA_API_BASE_URL` | `https://prediction-markets-api.dflow.net/api/v1` |
+| `TRADE_API_BASE_URL` | `https://quote-api.dflow.net` |
+| `WEBSOCKET_URL` | `wss://ws.dflow.net` |
+
+### Development
+
+| Constant | Value |
+|----------|-------|
+| `DEV_METADATA_API_BASE_URL` | Dev metadata API endpoint |
+| `DEV_TRADE_API_BASE_URL` | Dev trade API endpoint |
+| `DEV_WEBSOCKET_URL` | Dev WebSocket endpoint |
+
+## Token Mints
+
+| Constant | Description | Value |
+|----------|-------------|-------|
+| `USDC_MINT` | USDC token mint on Solana | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| `SOL_MINT` | Native SOL (wrapped) mint | `So11111111111111111111111111111111111111112` |
+
+## Trading Defaults
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `DEFAULT_SLIPPAGE_BPS` | `50` | Default slippage tolerance (0.5%) |
+| `OUTCOME_TOKEN_DECIMALS` | `6` | Decimal places for outcome tokens |
+
+## Limits
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `MAX_BATCH_SIZE` | `100` | Maximum items in batch requests |
+| `MAX_FILTER_ADDRESSES` | `200` | Maximum addresses in filter requests |
+
+## Usage Examples
+
+### Using Production Endpoints (Default)
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+// Uses production URLs by default
+const dflow = new DFlowClient();
+```
+
+### Using Development Endpoints
+
+```typescript
+import {
+  DFlowClient,
+  DEV_METADATA_API_BASE_URL,
+  DEV_TRADE_API_BASE_URL,
+  DEV_WEBSOCKET_URL,
+} from 'dflow-sdk';
+
+const dflow = new DFlowClient({
+  metadataBaseUrl: DEV_METADATA_API_BASE_URL,
+  tradeBaseUrl: DEV_TRADE_API_BASE_URL,
+  wsOptions: {
+    url: DEV_WEBSOCKET_URL,
+  },
+});
+```
+
+### Using Token Mints
+
+```typescript
+import { USDC_MINT, SOL_MINT } from 'dflow-sdk';
+
+// Swap USDC for YES tokens
+const quote = await dflow.swap.getQuote({
+  inputMint: USDC_MINT,
+  outputMint: yesMint,
+  amount: 1000000,
+});
+
+// Swap SOL for YES tokens
+const solQuote = await dflow.swap.getQuote({
+  inputMint: SOL_MINT,
+  outputMint: yesMint,
+  amount: 100000000, // 0.1 SOL
+});
+```
+
+### Respecting Batch Limits
+
+```typescript
+import { MAX_BATCH_SIZE } from 'dflow-sdk';
+
+async function fetchAllMarkets(tickers: string[]) {
+  const allMarkets = [];
+  
+  // Chunk requests to respect batch limit
+  for (let i = 0; i < tickers.length; i += MAX_BATCH_SIZE) {
+    const chunk = tickers.slice(i, i + MAX_BATCH_SIZE);
+    const markets = await dflow.markets.getMarketsBatch({ tickers: chunk });
+    allMarkets.push(...markets);
+  }
+  
+  return allMarkets;
+}
+```
+
+### Converting Amounts
+
+```typescript
+import { OUTCOME_TOKEN_DECIMALS } from 'dflow-sdk';
+
+// Convert human-readable to raw amount
+function toRawAmount(humanAmount: number): number {
+  return humanAmount * Math.pow(10, OUTCOME_TOKEN_DECIMALS);
+}
+
+// Convert raw to human-readable
+function toHumanAmount(rawAmount: number): number {
+  return rawAmount / Math.pow(10, OUTCOME_TOKEN_DECIMALS);
+}
+
+// Usage
+const rawAmount = toRawAmount(100); // 100 tokens → 100000000
+const humanAmount = toHumanAmount(50000000); // 50000000 → 50 tokens
+```

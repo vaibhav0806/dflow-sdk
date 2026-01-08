@@ -1,0 +1,225 @@
+---
+title: Markets API
+description: Access prediction market data, prices, and outcome mints
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+
+# Markets API
+
+The Markets API provides access to prediction market data including prices, volumes, outcome token mints, and batch queries.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const markets = dflow.markets;
+```
+
+## Methods
+
+### getMarket
+
+Get a single market by ticker.
+
+```typescript
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+
+console.log(`Title: ${market.title}`);
+console.log(`YES Price: ${market.yesPrice}`);
+console.log(`NO Price: ${market.noPrice}`);
+console.log(`Volume 24h: ${market.volume24h}`);
+```
+
+---
+
+### getMarketByMint
+
+Get a market by outcome token mint address.
+
+```typescript
+const market = await dflow.markets.getMarketByMint('mint-address');
+```
+
+---
+
+### getMarkets
+
+List markets with optional filters.
+
+```typescript
+const response = await dflow.markets.getMarkets({
+  status: 'active',
+  eventTicker: 'BTCD-25DEC0313',
+  limit: 50,
+});
+
+for (const market of response.markets) {
+  console.log(`${market.ticker}: YES=${market.yesPrice} NO=${market.noPrice}`);
+}
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `status` | `MarketStatus` | No | Filter by status |
+| `eventTicker` | `string` | No | Filter by event |
+| `seriesTicker` | `string` | No | Filter by series |
+| `limit` | `number` | No | Max results per page |
+| `cursor` | `string` | No | Pagination cursor |
+
+---
+
+### getMarketsBatch
+
+Retrieve multiple markets in a single request.
+
+```typescript
+const markets = await dflow.markets.getMarketsBatch({
+  tickers: ['market-1', 'market-2', 'market-3'],
+  mints: ['mint-address-1', 'mint-address-2'],
+});
+```
+
+<Callout type="warn">
+  Maximum 100 items total (tickers + mints) per batch request.
+</Callout>
+
+---
+
+### getOutcomeMints
+
+Get all known outcome token mints.
+
+```typescript
+const mints = await dflow.markets.getOutcomeMints();
+console.log(`Total outcome mints: ${mints.length}`);
+```
+
+---
+
+### filterOutcomeMints
+
+Filter a list of addresses to find which ones are outcome token mints.
+
+```typescript
+const addresses = ['address1', 'address2', 'address3'];
+const outcomeMints = await dflow.markets.filterOutcomeMints(addresses);
+
+console.log(`Found ${outcomeMints.length} outcome mints`);
+```
+
+<Callout type="info">
+  Maximum 200 addresses per filter request. Use this to identify prediction market tokens in a wallet.
+</Callout>
+
+---
+
+### getMarketCandlesticks
+
+Get candlestick (OHLCV) data for a market.
+
+```typescript
+const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749.99');
+```
+
+---
+
+### getMarketCandlesticksByMint
+
+Get candlestick data by mint address.
+
+```typescript
+const candles = await dflow.markets.getMarketCandlesticksByMint('mint-address');
+```
+
+---
+
+## Market Object
+
+```typescript
+interface Market {
+  ticker: string;
+  title: string;
+  subtitle?: string;
+  eventTicker: string;
+  status: MarketStatus;
+  result: MarketResult;
+  yesPrice?: number;
+  noPrice?: number;
+  volume?: number;
+  volume24h?: number;
+  openInterest?: number;
+  liquidity?: number;
+  openTime?: string;
+  closeTime?: string;
+  expirationTime?: string;
+  accounts: Record<string, MarketAccount>;
+  rules?: string;
+}
+
+type MarketStatus = 
+  | 'initialized'
+  | 'active'
+  | 'inactive'
+  | 'closed'
+  | 'determined'
+  | 'finalized';
+
+type MarketResult = 'yes' | 'no' | '';
+
+interface MarketAccount {
+  yesMint: string;      // YES outcome token mint
+  noMint: string;       // NO outcome token mint
+  marketLedger: string;
+  redemptionStatus: 'open' | 'closed';
+  scalarOutcomePct?: number; // For scalar markets
+}
+```
+
+## Examples
+
+### Find Markets by Event
+
+```typescript
+const response = await dflow.markets.getMarkets({
+  eventTicker: 'BTCD-25DEC0313',
+  status: 'active',
+});
+
+for (const market of response.markets) {
+  console.log(`${market.title}`);
+  console.log(`  Ticker: ${market.ticker}`);
+  console.log(`  YES: $${market.yesPrice?.toFixed(2)}`);
+  console.log(`  Volume: $${market.volume24h?.toLocaleString()}`);
+}
+```
+
+### Get Outcome Token Mints
+
+```typescript
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+
+// Access the outcome token mints
+const accountKey = Object.keys(market.accounts)[0]; // Usually 'usdc'
+const account = market.accounts[accountKey];
+
+console.log(`YES Mint: ${account.yesMint}`);
+console.log(`NO Mint: ${account.noMint}`);
+```
+
+### Check Wallet for Prediction Market Tokens
+
+```typescript
+import { getTokenBalances } from 'dflow-sdk';
+
+// Get all token balances
+const balances = await getTokenBalances(connection, walletPublicKey);
+const mints = balances.map(b => b.mint);
+
+// Filter to find prediction market tokens
+const predictionMints = await dflow.markets.filterOutcomeMints(mints);
+
+console.log(`Found ${predictionMints.length} prediction market positions`);
+```

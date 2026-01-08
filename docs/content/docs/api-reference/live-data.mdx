@@ -1,0 +1,94 @@
+---
+title: Live Data API
+description: Access real-time market data and milestones
+---
+
+# Live Data API
+
+The Live Data API provides access to real-time data feeds and milestone information for prediction markets.
+
+## Access
+
+```typescript
+const dflow = new DFlowClient();
+const liveData = dflow.liveData;
+```
+
+## Methods
+
+### getLiveData
+
+Get live data for specific milestones.
+
+```typescript
+const data = await dflow.liveData.getLiveData(['milestone1', 'milestone2']);
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `milestones` | `string[]` | Yes | Array of milestone identifiers |
+
+---
+
+### getLiveDataByEvent
+
+Get live data for an event by ticker.
+
+```typescript
+const data = await dflow.liveData.getLiveDataByEvent('BTCD-25DEC0313');
+```
+
+---
+
+### getLiveDataByMint
+
+Get live data by outcome token mint address.
+
+```typescript
+const data = await dflow.liveData.getLiveDataByMint('mint-address');
+```
+
+---
+
+## Examples
+
+### Monitor Event Live Data
+
+```typescript
+const eventTicker = 'BTCD-25DEC0313';
+
+const liveData = await dflow.liveData.getLiveDataByEvent(eventTicker);
+
+console.log(`Live data for ${eventTicker}:`);
+console.log(liveData);
+```
+
+### Get Live Data by Market Mint
+
+```typescript
+const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
+const accountKey = Object.keys(market.accounts)[0];
+const yesMint = market.accounts[accountKey].yesMint;
+
+const liveData = await dflow.liveData.getLiveDataByMint(yesMint);
+console.log(liveData);
+```
+
+## WebSocket for Real-time Updates
+
+For continuous real-time updates, consider using the WebSocket API:
+
+```typescript
+await dflow.ws.connect();
+
+// Subscribe to price updates
+dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99']);
+
+dflow.ws.onPrice((update) => {
+  console.log(`${update.ticker}: YES=${update.yesPrice} NO=${update.noPrice}`);
+});
+```
+
+See the [WebSocket API](/docs/api-reference/websocket) for more details.
