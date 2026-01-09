@@ -19,13 +19,19 @@ export class IntentAPI {
   }
 
   async submitIntent(params: SubmitIntentParams): Promise<IntentResponse> {
-    return this.http.post<IntentResponse>('/submit-intent', {
+    // First get a quote
+    const quoteResponse = await this.getIntentQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
+      amount: params.amount,
       mode: params.mode,
-      slippageBps: params.slippageBps,
+    });
+
+    // Then submit intent with the quote response
+    return this.http.post<IntentResponse>('/submit-intent', {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
+      slippageBps: params.slippageBps,
       priorityFee: params.priorityFee,
     });
   }

@@ -25,7 +25,9 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "tsx test/live-api-test.ts",
+    "test:e2e": "tsx test/e2e-test.ts"
   },
   "keywords": [
     "dflow",
@@ -46,6 +48,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
+    "bs58": "^6.0.0",
     "tsup": "^8.3.5",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2"

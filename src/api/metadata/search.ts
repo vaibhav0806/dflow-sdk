@@ -5,6 +5,9 @@ export class SearchAPI {
   constructor(private http: HttpClient) {}
 
   async search(params: SearchParams): Promise<SearchResult> {
-    return this.http.get<SearchResult>('/search', params);
+    return this.http.get<SearchResult>('/search', {
+      q: params.query,
+      limit: params.limit,
+    });
   }
 }

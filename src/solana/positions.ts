@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from '@solana/web3.js';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import type { TokenBalance, UserPosition, Market } from '../types/index.js';
 import type { MarketsAPI } from '../api/metadata/markets.js';
 
@@ -7,11 +7,19 @@ export async function getTokenBalances(
   connection: Connection,
   walletAddress: PublicKey
 ): Promise<TokenBalance[]> {
-  const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletAddress, {
-    programId: TOKEN_2022_PROGRAM_ID,
-  });
+  // Query both Token Program and Token-2022 Program
+  const [tokenAccounts, token2022Accounts] = await Promise.all([
+    connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_PROGRAM_ID,
+    }),
+    connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_2022_PROGRAM_ID,
+    }),
+  ]);
 
-  return tokenAccounts.value
+  const allAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+
+  return allAccounts
     .map(({ account }) => {
       const info = account.data.parsed.info;
       return {

@@ -20,11 +20,17 @@ export class SwapAPI {
   }
 
   async createSwap(params: SwapParams): Promise<SwapResponse> {
-    return this.http.post<SwapResponse>('/swap', {
+    // First get a quote
+    const quoteResponse = await this.getQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
+      amount: params.amount,
       slippageBps: params.slippageBps,
+    });
+
+    // Then create the swap with the quote response
+    return this.http.post<SwapResponse>('/swap', {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
       wrapUnwrapSol: params.wrapUnwrapSol,
       priorityFee: params.priorityFee,
@@ -32,11 +38,17 @@ export class SwapAPI {
   }
 
   async getSwapInstructions(params: SwapParams): Promise<SwapInstructionsResponse> {
-    return this.http.post<SwapInstructionsResponse>('/swap-instructions', {
+    // First get a quote
+    const quoteResponse = await this.getQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
+      amount: params.amount,
       slippageBps: params.slippageBps,
+    });
+
+    // Then get instructions with the quote response
+    return this.http.post<SwapInstructionsResponse>('/swap-instructions', {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
       wrapUnwrapSol: params.wrapUnwrapSol,
       priorityFee: params.priorityFee,

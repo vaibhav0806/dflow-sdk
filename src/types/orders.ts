@@ -74,8 +74,12 @@ export interface SwapParams extends QuoteParams {
 }
 
 export interface SwapResponse {
-  transaction: string;
-  quote: SwapQuote;
+  swapTransaction: string;
+  lastValidBlockHeight?: number;
+  prioritizationFeeLamports?: number;
+  computeUnitLimit?: number;
+  prioritizationType?: string;
+  quote?: SwapQuote;
 }
 
 export interface SwapInstructionsResponse {
