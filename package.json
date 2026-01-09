@@ -40,8 +40,16 @@
     "crypto",
     "sdk"
   ],
-  "author": "",
+  "author": "Vaibhav",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaibhav0806/dflow-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vaibhav0806/dflow-sdk/issues"
+  },
+  "homepage": "https://github.com/vaibhav0806/dflow-sdk#readme",
   "dependencies": {
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.98.0"
