@@ -2,6 +2,10 @@ import { HttpClient } from './utils/http.js';
 import {
   METADATA_API_BASE_URL,
   TRADE_API_BASE_URL,
+  PROD_METADATA_API_BASE_URL,
+  PROD_TRADE_API_BASE_URL,
+  WEBSOCKET_URL,
+  PROD_WEBSOCKET_URL,
 } from './utils/constants.js';
 
 import {
@@ -30,14 +34,27 @@ import { DFlowWebSocket } from './websocket/client.js';
 import type { WebSocketOptions } from './types/index.js';
 
 /**
+ * Environment type for DFlow API endpoints.
+ * - 'development': Uses dev endpoints, no API key required. Good for testing with real capital against Kalshi.
+ * - 'production': Uses prod endpoints, API key required. For production deployments.
+ */
+export type DFlowEnvironment = 'development' | 'production';
+
+/**
  * Configuration options for the DFlow client.
  */
 export interface DFlowClientOptions {
-  /** API key for authenticated endpoints (required for trade API) */
+  /**
+   * Environment to use. Defaults to 'development'.
+   * - 'development': No API key required, uses dev-*.dflow.net endpoints
+   * - 'production': API key required, uses *.dflow.net endpoints
+   */
+  environment?: DFlowEnvironment;
+  /** API key for authenticated endpoints (required for production) */
   apiKey?: string;
-  /** Custom base URL for the metadata API (default: production URL) */
+  /** Custom base URL for the metadata API (overrides environment setting) */
   metadataBaseUrl?: string;
-  /** Custom base URL for the trade API (default: production URL) */
+  /** Custom base URL for the trade API (overrides environment setting) */
   tradeBaseUrl?: string;
   /** WebSocket connection options */
   wsOptions?: WebSocketOptions;
@@ -50,24 +67,23 @@ export interface DFlowClientOptions {
  * ```typescript
  * import { DFlowClient } from 'dflow-sdk';
  *
- * // Basic usage (public endpoints only)
+ * // Development (default) - no API key required
+ * // Uses dev-*.dflow.net endpoints for testing with real capital
  * const dflow = new DFlowClient();
  * const markets = await dflow.markets.getMarkets();
  *
- * // With API key (for trading)
- * const dflow = new DFlowClient({ apiKey: 'your-api-key' });
+ * // Production - API key required
+ * // Uses *.dflow.net endpoints for production deployments
+ * const dflow = new DFlowClient({
+ *   environment: 'production',
+ *   apiKey: 'your-api-key',
+ * });
+ *
+ * // Get a quote and trade
  * const quote = await dflow.swap.getQuote({
  *   inputMint: USDC_MINT,
  *   outputMint: yesMint,
  *   amount: 1000000,
- * });
- *
- * // With custom endpoints (e.g., development)
- * import { DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL } from 'dflow-sdk';
- *
- * const devClient = new DFlowClient({
- *   metadataBaseUrl: DEV_METADATA_API_BASE_URL,
- *   tradeBaseUrl: DEV_TRADE_API_BASE_URL,
  * });
  * ```
  */
@@ -116,13 +132,21 @@ export class DFlowClient {
    * @param options - Client configuration options
    */
   constructor(options?: DFlowClientOptions) {
+    const env = options?.environment ?? 'development';
+    const isProd = env === 'production';
+
+    // Determine URLs based on environment (custom URLs override environment)
+    const metadataUrl = options?.metadataBaseUrl ?? (isProd ? PROD_METADATA_API_BASE_URL : METADATA_API_BASE_URL);
+    const tradeUrl = options?.tradeBaseUrl ?? (isProd ? PROD_TRADE_API_BASE_URL : TRADE_API_BASE_URL);
+    const wsUrl = isProd ? PROD_WEBSOCKET_URL : WEBSOCKET_URL;
+
     this.metadataHttp = new HttpClient({
-      baseUrl: options?.metadataBaseUrl ?? METADATA_API_BASE_URL,
+      baseUrl: metadataUrl,
       apiKey: options?.apiKey,
     });
 
     this.tradeHttp = new HttpClient({
-      baseUrl: options?.tradeBaseUrl ?? TRADE_API_BASE_URL,
+      baseUrl: tradeUrl,
       apiKey: options?.apiKey,
     });
 
@@ -143,7 +167,7 @@ export class DFlowClient {
     this.tokens = new TokensAPI(this.tradeHttp);
     this.venues = new VenuesAPI(this.tradeHttp);
 
-    this.ws = new DFlowWebSocket(options?.wsOptions);
+    this.ws = new DFlowWebSocket({ ...options?.wsOptions, url: options?.wsOptions?.url ?? wsUrl });
   }
 
   /**
