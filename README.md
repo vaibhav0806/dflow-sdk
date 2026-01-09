@@ -1,5 +1,8 @@
 # DFlow SDK
 
+[![npm](https://img.shields.io/npm/v/dflow-sdk)](https://www.npmjs.com/package/dflow-sdk)
+[![Documentation](https://img.shields.io/badge/docs-dflow--sdk.vercel.app-blue)](https://dflow-sdk.vercel.app)
+
 Unified TypeScript SDK for DFlow on Solana - prediction markets and trading.
 
 ## Installation
