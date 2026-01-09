@@ -49,7 +49,7 @@
   "bugs": {
     "url": "https://github.com/vaibhav0806/dflow-sdk/issues"
   },
-  "homepage": "https://github.com/vaibhav0806/dflow-sdk#readme",
+  "homepage": "https://dflow-sdk.vercel.app",
   "dependencies": {
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.98.0"
