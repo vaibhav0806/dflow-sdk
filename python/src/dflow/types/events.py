@@ -22,7 +22,7 @@ class Event(BaseModel):
 class EventsResponse(BaseModel):
     """Response from events list endpoint."""
 
-    cursor: str | None = None
+    cursor: str | int | None = None
     events: list[Event]
 
 

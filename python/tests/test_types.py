@@ -2,15 +2,11 @@
 
 import pytest
 
-from dflow.types import (
-    Event,
-    Market,
-    MarketAccount,
-    Orderbook,
-    OrderbookLevel,
-    SwapQuote,
-    Trade,
-)
+from dflow.types.events import Event
+from dflow.types.markets import Market, MarketAccount
+from dflow.types.orderbook import Orderbook, OrderbookLevel
+from dflow.types.orders import SwapQuote
+from dflow.types.trades import Trade
 
 
 class TestMarketTypes:
@@ -61,6 +57,46 @@ class TestMarketTypes:
         assert market.yes_price is None
         assert market.volume is None
 
+    def test_market_with_integer_timestamps(self):
+        """Test Market parsing with integer timestamps (as returned by real API)."""
+        data = {
+            "ticker": "TEST-MARKET",
+            "title": "Test Market",
+            "eventTicker": "TEST-EVENT",
+            "status": "active",
+            "result": "",
+            "accounts": {},
+            "openTime": 1731524400,
+            "closeTime": 1774969200,
+            "expirationTime": 1774969200,
+        }
+        market = Market.model_validate(data)
+        assert market.open_time == 1731524400
+        assert market.close_time == 1774969200
+        assert market.expiration_time == 1774969200
+
+    def test_market_account_pending_status(self):
+        """Test MarketAccount with 'pending' redemption status."""
+        data = {
+            "yesMint": "YesMint123",
+            "noMint": "NoMint123",
+            "marketLedger": "Ledger123",
+            "redemptionStatus": "pending",
+        }
+        account = MarketAccount.model_validate(data)
+        assert account.redemption_status == "pending"
+
+    def test_market_account_null_status(self):
+        """Test MarketAccount with null redemption status."""
+        data = {
+            "yesMint": "YesMint123",
+            "noMint": "NoMint123",
+            "marketLedger": "Ledger123",
+            "redemptionStatus": None,
+        }
+        account = MarketAccount.model_validate(data)
+        assert account.redemption_status is None
+
 
 class TestEventTypes:
     """Tests for event-related types."""
@@ -93,26 +129,34 @@ class TestOrderbookTypes:
         assert level.quantity == 1000
 
     def test_orderbook_parsing(self, mock_orderbook_data):
-        """Test Orderbook parsing."""
+        """Test Orderbook parsing (new API format)."""
         orderbook = Orderbook.model_validate(mock_orderbook_data)
-        assert orderbook.market_ticker == "BTCD-25DEC0313-T92749.99"
-        assert orderbook.timestamp == 1704067200000
-        assert len(orderbook.yes_ask) == 1
-        assert orderbook.yes_ask[0].price == 0.66
-        assert orderbook.yes_bid[0].quantity == 800
+        assert orderbook.sequence == 1704067200000
+        assert orderbook.timestamp == 1704067200000  # backwards compat
+        assert len(orderbook.yes_bids) == 2
+        assert len(orderbook.no_bids) == 2
+        # Test the helper methods
+        yes_levels = orderbook.get_yes_levels()
+        assert len(yes_levels) == 2
+        assert yes_levels[0].price == 0.65  # sorted descending
+        assert yes_levels[0].quantity == 1000
 
 
 class TestTradeTypes:
     """Tests for trade types."""
 
     def test_trade_parsing(self, mock_trade_data):
-        """Test Trade parsing."""
+        """Test Trade parsing (new API format)."""
         trade = Trade.model_validate(mock_trade_data)
+        assert trade.trade_id == "trade-123"
+        assert trade.ticker == "BTCD-25DEC0313-T92749.99"
+        assert trade.taker_side == "yes"
+        assert trade.price == 65
+        assert trade.count == 100
+        # Test backwards-compatible properties
         assert trade.id == "trade-123"
         assert trade.market_ticker == "BTCD-25DEC0313-T92749.99"
         assert trade.side == "yes"
-        assert trade.action == "buy"
-        assert trade.price == 0.65
         assert trade.quantity == 100
 
 

@@ -1,6 +1,6 @@
 """Tokens API for DFlow SDK."""
 
-from dflow.types import Token, TokenWithDecimals
+from dflow.types import TokenWithDecimals
 from dflow.utils.http import HttpClient
 
 
@@ -13,26 +13,25 @@ class TokensAPI:
     Example:
         >>> dflow = DFlowClient()
         >>> tokens = dflow.tokens.get_tokens()
-        >>> for token in tokens:
-        ...     print(f"{token.symbol}: {token.mint}")
+        >>> for mint in tokens[:5]:
+        ...     print(f"Mint: {mint}")
     """
 
     def __init__(self, http: HttpClient):
         self._http = http
 
-    def get_tokens(self) -> list[Token]:
-        """Get all available tokens for trading.
+    def get_tokens(self) -> list[str]:
+        """Get all available token mint addresses for trading.
 
         Returns:
-            Array of token information
+            List of token mint addresses (Solana public keys)
 
         Example:
-            >>> tokens = dflow.tokens.get_tokens()
-            >>> for token in tokens:
-            ...     print(f"{token.symbol}: {token.mint}")
+            >>> mints = dflow.tokens.get_tokens()
+            >>> print(f"Found {len(mints)} tokens")
         """
         data = self._http.get("/tokens")
-        return [Token.model_validate(t) for t in data]
+        return data
 
     def get_tokens_with_decimals(self) -> list[TokenWithDecimals]:
         """Get all available tokens with decimal information.

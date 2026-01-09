@@ -57,26 +57,26 @@ def mock_quote_data():
 
 @pytest.fixture
 def mock_orderbook_data():
-    """Sample orderbook data for testing."""
+    """Sample orderbook data for testing (matches actual API format)."""
     return {
-        "marketTicker": "BTCD-25DEC0313-T92749.99",
-        "timestamp": 1704067200000,
-        "yesAsk": [{"price": 0.66, "quantity": 1000}],
-        "yesBid": [{"price": 0.64, "quantity": 800}],
-        "noAsk": [{"price": 0.36, "quantity": 900}],
-        "noBid": [{"price": 0.34, "quantity": 700}],
+        "yes_bids": {"0.6400": 800, "0.6500": 1000},
+        "no_bids": {"0.3400": 700, "0.3600": 900},
+        "sequence": 1704067200000,
     }
 
 
 @pytest.fixture
 def mock_trade_data():
-    """Sample trade data for testing."""
+    """Sample trade data for testing (matches actual API format)."""
     return {
-        "id": "trade-123",
-        "marketTicker": "BTCD-25DEC0313-T92749.99",
-        "side": "yes",
-        "action": "buy",
-        "price": 0.65,
-        "quantity": 100,
-        "timestamp": "2025-01-01T12:00:00Z",
+        "tradeId": "trade-123",
+        "ticker": "BTCD-25DEC0313-T92749.99",
+        "price": 65,
+        "count": 100,
+        "yesPrice": 6500,
+        "noPrice": 3500,
+        "yesPriceDollars": "0.65",
+        "noPriceDollars": "0.35",
+        "takerSide": "yes",
+        "createdTime": 1704067200,
     }

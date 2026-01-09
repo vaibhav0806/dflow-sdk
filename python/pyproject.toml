@@ -1,21 +1,39 @@
 [project]
 name = "dflow-sdk"
-version = "0.1.0"
+version = "0.1.2"
 description = "Python SDK for DFlow on Solana - prediction markets and trading"
-authors = [{name = "DFlow Team"}]
+authors = [{name = "DFlow Team", email = "dev@dflow.net"}]
+maintainers = [{name = "Vaibhav", email = "vaibhav@dflow.net"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["dflow", "solana", "prediction-markets", "kalshi", "trading", "defi", "crypto", "sdk"]
+keywords = [
+    "dflow",
+    "solana",
+    "prediction-markets",
+    "kalshi",
+    "trading",
+    "defi",
+    "crypto",
+    "sdk",
+    "blockchain",
+    "web3",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -24,6 +42,7 @@ dependencies = [
     "httpx>=0.27.0",
     "websockets>=12.0",
     "pydantic>=2.0.0",
+    "twine>=6.2.0",
 ]
 
 [project.optional-dependencies]
@@ -47,6 +66,14 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dflow"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/LICENSE",
+    "/README.md",
+]
 
 [tool.ruff]
 line-length = 100

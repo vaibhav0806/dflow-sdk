@@ -51,7 +51,7 @@ class OrderFill(BaseModel):
     in_amount: str = Field(alias="inAmount")
     out_amount: str = Field(alias="outAmount")
     price: float
-    timestamp: str
+    timestamp: str | int
 
     model_config = {"populate_by_name": True}
 

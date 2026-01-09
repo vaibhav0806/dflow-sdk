@@ -103,9 +103,10 @@ class TestOrderbookAPI:
         with DFlowClient() as client:
             orderbook = client.orderbook.get_orderbook("BTCD-25DEC0313-T92749.99")
             
-            assert orderbook.market_ticker == "BTCD-25DEC0313-T92749.99"
-            assert len(orderbook.yes_ask) == 1
-            assert orderbook.yes_ask[0].price == 0.66
+            assert orderbook.sequence == 1704067200000
+            assert len(orderbook.yes_bids) == 2
+            yes_levels = orderbook.get_yes_levels()
+            assert yes_levels[0].price == 0.65
 
 
 class TestTradesAPI:
@@ -124,8 +125,9 @@ class TestTradesAPI:
             )
             
             assert len(response.trades) == 1
-            assert response.trades[0].side == "yes"
-            assert response.trades[0].price == 0.65
+            assert response.trades[0].side == "yes"  # backwards compat property
+            assert response.trades[0].taker_side == "yes"
+            assert response.trades[0].price == 65  # price in cents
 
 
 class TestSwapAPI:

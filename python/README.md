@@ -1,10 +1,10 @@
 # DFlow Python SDK
 
-🐍 **Python SDK for DFlow on Solana - prediction markets and trading**
-
 [![PyPI version](https://badge.fury.io/py/dflow-sdk.svg)](https://badge.fury.io/py/dflow-sdk)
 [![Python versions](https://img.shields.io/pypi/pyversions/dflow-sdk.svg)](https://pypi.org/project/dflow-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+🐍 **Python SDK for DFlow on Solana - prediction markets and trading**
 
 ## Installation
 
@@ -12,10 +12,17 @@
 pip install dflow-sdk
 ```
 
-Or with development dependencies:
+Or with a package manager:
 
 ```bash
-pip install dflow-sdk[dev]
+# Poetry
+poetry add dflow-sdk
+
+# UV
+uv add dflow-sdk
+
+# PDM
+pdm add dflow-sdk
 ```
 
 ## Quick Start
@@ -116,7 +123,28 @@ asyncio.run(main())
 - **Type Safety**: Full Pydantic models for all API responses
 - **Async Support**: Both sync and async HTTP clients available
 
-## API Reference
+## API Modules
+
+| Module | Description |
+|--------|-------------|
+| `client.events` | Event discovery and queries |
+| `client.markets` | Market data, pricing, batch queries |
+| `client.orderbook` | Orderbook snapshots |
+| `client.trades` | Historical trade data |
+| `client.live_data` | Real-time milestone data |
+| `client.series` | Series/category information |
+| `client.tags` | Tag-based filtering |
+| `client.sports` | Sports-specific filters |
+| `client.search` | Full-text search |
+| `client.orders` | Order creation and status |
+| `client.swap` | Imperative swaps with route preview |
+| `client.intent` | Declarative intent-based swaps |
+| `client.prediction_market` | Market initialization |
+| `client.tokens` | Token information |
+| `client.venues` | Trading venue information |
+| `client.ws` | WebSocket for real-time updates |
+
+## Documentation
 
 See the [full documentation](https://dflow-sdk.vercel.app/docs) for detailed API reference.
 
