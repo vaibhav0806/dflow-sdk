@@ -8,6 +8,8 @@ Unified TypeScript SDK for DFlow on Solana - prediction markets and trading.
 pnpm add dflow-sdk
 # or
 npm install dflow-sdk
+# or
+bun install dflow-sdk
 ```
 
 ## Quick Start
