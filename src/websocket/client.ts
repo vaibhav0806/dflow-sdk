@@ -13,6 +13,32 @@ type MessageCallback<T> = (data: T) => void;
 type ErrorCallback = (error: Error) => void;
 type CloseCallback = (event: CloseEvent) => void;
 
+/**
+ * WebSocket client for real-time price, trade, and orderbook updates.
+ *
+ * Provides streaming market data with automatic reconnection support.
+ * Subscribe to specific markets or all markets for each data channel.
+ *
+ * @example
+ * ```typescript
+ * const dflow = new DFlowClient();
+ *
+ * // Connect to WebSocket
+ * await dflow.ws.connect();
+ *
+ * // Subscribe to price updates for specific markets
+ * dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99']);
+ *
+ * // Handle price updates
+ * const unsubscribe = dflow.ws.onPrice((update) => {
+ *   console.log(`${update.ticker}: YES=${update.yesPrice} NO=${update.noPrice}`);
+ * });
+ *
+ * // Later: cleanup
+ * unsubscribe(); // Remove callback
+ * dflow.ws.disconnect(); // Close connection
+ * ```
+ */
 export class DFlowWebSocket {
   private ws: WebSocket | null = null;
   private url: string;
@@ -28,6 +54,15 @@ export class DFlowWebSocket {
   private errorCallbacks: ErrorCallback[] = [];
   private closeCallbacks: CloseCallback[] = [];
 
+  /**
+   * Create a new WebSocket client.
+   *
+   * @param options - WebSocket configuration options
+   * @param options.url - Custom WebSocket URL (defaults to DFlow WebSocket)
+   * @param options.reconnect - Whether to auto-reconnect on disconnect (default: true)
+   * @param options.reconnectInterval - Milliseconds between reconnect attempts (default: 5000)
+   * @param options.maxReconnectAttempts - Max reconnection attempts (default: 10)
+   */
   constructor(options?: WebSocketOptions) {
     this.url = options?.url ?? WEBSOCKET_URL;
     this.reconnect = options?.reconnect ?? true;
@@ -35,6 +70,21 @@ export class DFlowWebSocket {
     this.maxReconnectAttempts = options?.maxReconnectAttempts ?? 10;
   }
 
+  /**
+   * Connect to the WebSocket server.
+   *
+   * Must be called before subscribing to any channels.
+   * Resolves when connection is established.
+   *
+   * @returns Promise that resolves when connected
+   * @throws Error if connection fails
+   *
+   * @example
+   * ```typescript
+   * await dflow.ws.connect();
+   * console.log('Connected!', dflow.ws.isConnected);
+   * ```
+   */
   async connect(): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) {
       return;
@@ -79,6 +129,16 @@ export class DFlowWebSocket {
     });
   }
 
+  /**
+   * Disconnect from the WebSocket server.
+   *
+   * Disables auto-reconnect and closes the connection.
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.disconnect();
+   * ```
+   */
   disconnect(): void {
     this.reconnect = false;
     if (this.ws) {
@@ -131,30 +191,109 @@ export class DFlowWebSocket {
     this.ws.send(JSON.stringify(message));
   }
 
+  /**
+   * Subscribe to price updates for specific markets.
+   *
+   * @param tickers - Array of market tickers to subscribe to
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99', 'ETHD-25DEC0313']);
+   * ```
+   */
   subscribePrices(tickers: string[]): void {
     this.send({ type: 'subscribe', channel: 'prices', tickers });
   }
 
+  /**
+   * Subscribe to price updates for all markets.
+   *
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribeAllPrices();
+   * ```
+   */
   subscribeAllPrices(): void {
     this.send({ type: 'subscribe', channel: 'prices', all: true });
   }
 
+  /**
+   * Subscribe to trade updates for specific markets.
+   *
+   * @param tickers - Array of market tickers to subscribe to
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribeTrades(['BTCD-25DEC0313-T92749.99']);
+   * ```
+   */
   subscribeTrades(tickers: string[]): void {
     this.send({ type: 'subscribe', channel: 'trades', tickers });
   }
 
+  /**
+   * Subscribe to trade updates for all markets.
+   *
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribeAllTrades();
+   * ```
+   */
   subscribeAllTrades(): void {
     this.send({ type: 'subscribe', channel: 'trades', all: true });
   }
 
+  /**
+   * Subscribe to orderbook updates for specific markets.
+   *
+   * @param tickers - Array of market tickers to subscribe to
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribeOrderbook(['BTCD-25DEC0313-T92749.99']);
+   * ```
+   */
   subscribeOrderbook(tickers: string[]): void {
     this.send({ type: 'subscribe', channel: 'orderbook', tickers });
   }
 
+  /**
+   * Subscribe to orderbook updates for all markets.
+   *
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * dflow.ws.subscribeAllOrderbook();
+   * ```
+   */
   subscribeAllOrderbook(): void {
     this.send({ type: 'subscribe', channel: 'orderbook', all: true });
   }
 
+  /**
+   * Unsubscribe from a channel.
+   *
+   * @param channel - The channel to unsubscribe from ('prices', 'trades', or 'orderbook')
+   * @param tickers - Optional specific tickers to unsubscribe. If omitted, unsubscribes from all.
+   * @throws Error if WebSocket is not connected
+   *
+   * @example
+   * ```typescript
+   * // Unsubscribe from specific markets
+   * dflow.ws.unsubscribe('prices', ['BTCD-25DEC0313-T92749.99']);
+   *
+   * // Unsubscribe from all on a channel
+   * dflow.ws.unsubscribe('trades');
+   * ```
+   */
   unsubscribe(channel: WebSocketChannel, tickers?: string[]): void {
     if (tickers) {
       this.send({ type: 'unsubscribe', channel, tickers });
@@ -163,6 +302,22 @@ export class DFlowWebSocket {
     }
   }
 
+  /**
+   * Register a callback for price updates.
+   *
+   * @param callback - Function called when a price update is received
+   * @returns Unsubscribe function to remove the callback
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = dflow.ws.onPrice((update) => {
+   *   console.log(`${update.ticker}: YES=${update.yesPrice} NO=${update.noPrice}`);
+   * });
+   *
+   * // Later: remove callback
+   * unsubscribe();
+   * ```
+   */
   onPrice(callback: MessageCallback<PriceUpdate>): () => void {
     this.priceCallbacks.push(callback);
     return () => {
@@ -170,6 +325,22 @@ export class DFlowWebSocket {
     };
   }
 
+  /**
+   * Register a callback for trade updates.
+   *
+   * @param callback - Function called when a trade update is received
+   * @returns Unsubscribe function to remove the callback
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = dflow.ws.onTrade((trade) => {
+   *   console.log(`Trade: ${trade.side} ${trade.amount} @ ${trade.price}`);
+   * });
+   *
+   * // Later: remove callback
+   * unsubscribe();
+   * ```
+   */
   onTrade(callback: MessageCallback<TradeUpdate>): () => void {
     this.tradeCallbacks.push(callback);
     return () => {
@@ -177,6 +348,22 @@ export class DFlowWebSocket {
     };
   }
 
+  /**
+   * Register a callback for orderbook updates.
+   *
+   * @param callback - Function called when an orderbook update is received
+   * @returns Unsubscribe function to remove the callback
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = dflow.ws.onOrderbook((book) => {
+   *   console.log(`${book.ticker}: Bid=${book.yesBid} Ask=${book.yesAsk}`);
+   * });
+   *
+   * // Later: remove callback
+   * unsubscribe();
+   * ```
+   */
   onOrderbook(callback: MessageCallback<OrderbookUpdate>): () => void {
     this.orderbookCallbacks.push(callback);
     return () => {
@@ -184,6 +371,19 @@ export class DFlowWebSocket {
     };
   }
 
+  /**
+   * Register a callback for WebSocket errors.
+   *
+   * @param callback - Function called when an error occurs
+   * @returns Unsubscribe function to remove the callback
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = dflow.ws.onError((error) => {
+   *   console.error('WebSocket error:', error.message);
+   * });
+   * ```
+   */
   onError(callback: ErrorCallback): () => void {
     this.errorCallbacks.push(callback);
     return () => {
@@ -191,6 +391,19 @@ export class DFlowWebSocket {
     };
   }
 
+  /**
+   * Register a callback for WebSocket close events.
+   *
+   * @param callback - Function called when the connection closes
+   * @returns Unsubscribe function to remove the callback
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = dflow.ws.onClose((event) => {
+   *   console.log('WebSocket closed:', event.code, event.reason);
+   * });
+   * ```
+   */
   onClose(callback: CloseCallback): () => void {
     this.closeCallbacks.push(callback);
     return () => {
@@ -198,6 +411,18 @@ export class DFlowWebSocket {
     };
   }
 
+  /**
+   * Check if the WebSocket is currently connected.
+   *
+   * @returns true if connected, false otherwise
+   *
+   * @example
+   * ```typescript
+   * if (dflow.ws.isConnected) {
+   *   dflow.ws.subscribePrices(['BTCD-25DEC0313-T92749.99']);
+   * }
+   * ```
+   */
   get isConnected(): boolean {
     return this.ws?.readyState === WebSocket.OPEN;
   }

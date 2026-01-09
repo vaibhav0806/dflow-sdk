@@ -3,6 +3,30 @@ import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 import type { TokenBalance, UserPosition, Market } from '../types/index.js';
 import type { MarketsAPI } from '../api/metadata/markets.js';
 
+/**
+ * Get all token balances for a wallet.
+ *
+ * Queries both the standard Token Program and Token-2022 Program to find
+ * all token holdings. Returns only tokens with non-zero balances.
+ *
+ * @param connection - Solana RPC connection
+ * @param walletAddress - Wallet public key to query
+ * @returns Array of token balances with mint, balance, and decimal info
+ *
+ * @example
+ * ```typescript
+ * import { Connection, PublicKey } from '@solana/web3.js';
+ * import { getTokenBalances } from 'dflow-sdk';
+ *
+ * const connection = new Connection('https://api.mainnet-beta.solana.com');
+ * const wallet = new PublicKey('...');
+ *
+ * const balances = await getTokenBalances(connection, wallet);
+ * balances.forEach(token => {
+ *   console.log(`${token.mint}: ${token.balance} (${token.decimals} decimals)`);
+ * });
+ * ```
+ */
 export async function getTokenBalances(
   connection: Connection,
   walletAddress: PublicKey
@@ -32,6 +56,37 @@ export async function getTokenBalances(
     .filter((token) => token.balance > 0);
 }
 
+/**
+ * Get a user's prediction market positions.
+ *
+ * Finds all prediction market outcome tokens in a wallet and enriches them
+ * with market data and position type (YES/NO).
+ *
+ * @param connection - Solana RPC connection
+ * @param walletAddress - Wallet public key to query
+ * @param marketsAPI - Markets API instance for looking up market data
+ * @returns Array of user positions with market context
+ *
+ * @example
+ * ```typescript
+ * import { Connection, PublicKey } from '@solana/web3.js';
+ * import { DFlowClient, getUserPositions } from 'dflow-sdk';
+ *
+ * const dflow = new DFlowClient();
+ * const connection = new Connection('https://api.mainnet-beta.solana.com');
+ * const wallet = new PublicKey('...');
+ *
+ * const positions = await getUserPositions(connection, wallet, dflow.markets);
+ *
+ * positions.forEach(pos => {
+ *   console.log(`${pos.position} position: ${pos.balance} tokens`);
+ *   if (pos.market) {
+ *     console.log(`  Market: ${pos.market.title}`);
+ *     console.log(`  Status: ${pos.market.status}`);
+ *   }
+ * });
+ * ```
+ */
 export async function getUserPositions(
   connection: Connection,
   walletAddress: PublicKey,
@@ -93,6 +148,31 @@ export async function getUserPositions(
   });
 }
 
+/**
+ * Check if a position is eligible for redemption.
+ *
+ * A position is eligible if:
+ * - The market is 'determined' or 'finalized'
+ * - The redemption window is open
+ * - The position is on the winning side (or it's a scalar market)
+ *
+ * @param market - The market data
+ * @param outcomeMint - The mint address of the outcome token to check
+ * @returns true if the position can be redeemed
+ *
+ * @example
+ * ```typescript
+ * import { isRedemptionEligible } from 'dflow-sdk';
+ *
+ * const positions = await getUserPositions(connection, wallet, dflow.markets);
+ *
+ * for (const pos of positions) {
+ *   if (pos.market && isRedemptionEligible(pos.market, pos.mint)) {
+ *     console.log(`Position ${pos.mint} is redeemable!`);
+ *   }
+ * }
+ * ```
+ */
 export function isRedemptionEligible(market: Market, outcomeMint: string): boolean {
   if (market.status !== 'determined' && market.status !== 'finalized') {
     return false;
@@ -118,6 +198,29 @@ export function isRedemptionEligible(market: Market, outcomeMint: string): boole
   return false;
 }
 
+/**
+ * Calculate the payout for a scalar market position.
+ *
+ * Scalar markets pay out based on where the outcome falls within a range.
+ * YES tokens pay the outcome percentage, NO tokens pay the inverse.
+ *
+ * @param market - The market data
+ * @param outcomeMint - The mint address of the outcome token
+ * @param amount - The number of tokens held
+ * @returns The payout amount in settlement tokens
+ *
+ * @example
+ * ```typescript
+ * import { calculateScalarPayout, isRedemptionEligible } from 'dflow-sdk';
+ *
+ * for (const pos of positions) {
+ *   if (pos.market && isRedemptionEligible(pos.market, pos.mint)) {
+ *     const payout = calculateScalarPayout(pos.market, pos.mint, pos.balance);
+ *     console.log(`Expected payout: ${payout} USDC`);
+ *   }
+ * }
+ * ```
+ */
 export function calculateScalarPayout(
   market: Market,
   outcomeMint: string,
