@@ -1,4 +1,4 @@
-export { DFlowClient, type DFlowClientOptions } from './client.js';
+export { DFlowClient, type DFlowClientOptions, type DFlowEnvironment } from './client.js';
 
 export { DFlowWebSocket } from './websocket/client.js';
 
@@ -54,9 +54,9 @@ export {
   METADATA_API_BASE_URL,
   TRADE_API_BASE_URL,
   WEBSOCKET_URL,
-  DEV_METADATA_API_BASE_URL,
-  DEV_TRADE_API_BASE_URL,
-  DEV_WEBSOCKET_URL,
+  PROD_METADATA_API_BASE_URL,
+  PROD_TRADE_API_BASE_URL,
+  PROD_WEBSOCKET_URL,
   USDC_MINT,
   SOL_MINT,
   DEFAULT_SLIPPAGE_BPS,

@@ -240,8 +240,12 @@ interface SwapParams extends QuoteParams {
     priorityFee?: PriorityFeeConfig;
 }
 interface SwapResponse {
-    transaction: string;
-    quote: SwapQuote;
+    swapTransaction: string;
+    lastValidBlockHeight?: number;
+    prioritizationFeeLamports?: number;
+    computeUnitLimit?: number;
+    prioritizationType?: string;
+    quote?: SwapQuote;
 }
 interface SwapInstructionsResponse {
     setupInstructions: SerializedInstruction[];
@@ -592,14 +596,26 @@ declare class DFlowWebSocket {
 }
 
 /**
+ * Environment type for DFlow API endpoints.
+ * - 'development': Uses dev endpoints, no API key required. Good for testing with real capital against Kalshi.
+ * - 'production': Uses prod endpoints, API key required. For production deployments.
+ */
+type DFlowEnvironment = 'development' | 'production';
+/**
  * Configuration options for the DFlow client.
  */
 interface DFlowClientOptions {
-    /** API key for authenticated endpoints (required for trade API) */
+    /**
+     * Environment to use. Defaults to 'development'.
+     * - 'development': No API key required, uses dev-*.dflow.net endpoints
+     * - 'production': API key required, uses *.dflow.net endpoints
+     */
+    environment?: DFlowEnvironment;
+    /** API key for authenticated endpoints (required for production) */
     apiKey?: string;
-    /** Custom base URL for the metadata API (default: production URL) */
+    /** Custom base URL for the metadata API (overrides environment setting) */
     metadataBaseUrl?: string;
-    /** Custom base URL for the trade API (default: production URL) */
+    /** Custom base URL for the trade API (overrides environment setting) */
     tradeBaseUrl?: string;
     /** WebSocket connection options */
     wsOptions?: WebSocketOptions;
@@ -611,24 +627,23 @@ interface DFlowClientOptions {
  * ```typescript
  * import { DFlowClient } from 'dflow-sdk';
  *
- * // Basic usage (public endpoints only)
+ * // Development (default) - no API key required
+ * // Uses dev-*.dflow.net endpoints for testing with real capital
  * const dflow = new DFlowClient();
  * const markets = await dflow.markets.getMarkets();
  *
- * // With API key (for trading)
- * const dflow = new DFlowClient({ apiKey: 'your-api-key' });
+ * // Production - API key required
+ * // Uses *.dflow.net endpoints for production deployments
+ * const dflow = new DFlowClient({
+ *   environment: 'production',
+ *   apiKey: 'your-api-key',
+ * });
+ *
+ * // Get a quote and trade
  * const quote = await dflow.swap.getQuote({
  *   inputMint: USDC_MINT,
  *   outputMint: yesMint,
  *   amount: 1000000,
- * });
- *
- * // With custom endpoints (e.g., development)
- * import { DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL } from 'dflow-sdk';
- *
- * const devClient = new DFlowClient({
- *   metadataBaseUrl: DEV_METADATA_API_BASE_URL,
- *   tradeBaseUrl: DEV_TRADE_API_BASE_URL,
  * });
  * ```
  */
@@ -901,12 +916,12 @@ declare function findFirst<TResponse extends {
     cursor?: string;
 }, TItem>(fetchPage: (params: PaginationParams) => Promise<TResponse>, options: PaginateOptions<TResponse, TItem>, predicate: (item: TItem) => boolean): Promise<TItem | undefined>;
 
-declare const METADATA_API_BASE_URL = "https://prediction-markets-api.dflow.net/api/v1";
-declare const TRADE_API_BASE_URL = "https://quote-api.dflow.net";
-declare const WEBSOCKET_URL = "wss://prediction-markets-api.dflow.net/api/v1/ws";
-declare const DEV_METADATA_API_BASE_URL = "https://dev-prediction-markets-api.dflow.net/api/v1";
-declare const DEV_TRADE_API_BASE_URL = "https://dev-quote-api.dflow.net";
-declare const DEV_WEBSOCKET_URL = "wss://dev-prediction-markets-api.dflow.net/api/v1/ws";
+declare const METADATA_API_BASE_URL = "https://dev-prediction-markets-api.dflow.net/api/v1";
+declare const TRADE_API_BASE_URL = "https://dev-quote-api.dflow.net";
+declare const WEBSOCKET_URL = "wss://dev-prediction-markets-api.dflow.net/api/v1/ws";
+declare const PROD_METADATA_API_BASE_URL = "https://prediction-markets-api.dflow.net/api/v1";
+declare const PROD_TRADE_API_BASE_URL = "https://quote-api.dflow.net";
+declare const PROD_WEBSOCKET_URL = "wss://prediction-markets-api.dflow.net/api/v1/ws";
 declare const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 declare const SOL_MINT = "So11111111111111111111111111111111111111112";
 declare const DEFAULT_SLIPPAGE_BPS = 50;
@@ -914,4 +929,4 @@ declare const MAX_BATCH_SIZE = 100;
 declare const MAX_FILTER_ADDRESSES = 200;
 declare const OUTCOME_TOKEN_DECIMALS = 6;
 
-export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, type DFlowClientOptions, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, type PaginateOptions, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RetryOptions, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type Token, type TokenBalance, type TokenWithDecimals, TokensAPI, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, type Venue, VenuesAPI, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };
+export { type Candlestick, type CandlestickPeriod, type CategoryTags, DEFAULT_SLIPPAGE_BPS, DFlowApiError, DFlowClient, type DFlowClientOptions, type DFlowEnvironment, DFlowWebSocket, type Event, EventsAPI, type EventsParams, type EventsResponse, type ExecutionMode, type FilterOutcomeMintsParams, type FilterOutcomeMintsResponse, type ForecastHistory, type ForecastHistoryPoint, HttpClient, IntentAPI, type IntentQuote, type IntentQuoteParams, type IntentResponse, type LiveData, LiveDataAPI, type LiveDataMilestone, type LiveDataResponse, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, type Market, type MarketAccount, type MarketResult, type MarketStatus, MarketsAPI, type MarketsBatchParams, type MarketsBatchResponse, type MarketsParams, type MarketsResponse, OUTCOME_TOKEN_DECIMALS, type OrderFill, type OrderParams, type OrderResponse, type OrderStatusResponse, type OrderStatusType, type Orderbook, OrderbookAPI, type OrderbookLevel, type OrderbookUpdate, OrdersAPI, type OutcomeMintsResponse, PROD_METADATA_API_BASE_URL, PROD_TRADE_API_BASE_URL, PROD_WEBSOCKET_URL, type PaginateOptions, type PaginatedResponse, type PaginationParams, type PositionType, PredictionMarketAPI, type PredictionMarketInitParams, type PredictionMarketInitResponse, type PriceUpdate, type PriorityFeeConfig, type QuoteParams, type RedemptionResult, type RedemptionStatus, type RetryOptions, type RoutePlanStep, SOL_MINT, SearchAPI, type SearchParams, type SearchResult, type SerializedInstruction, type Series, SeriesAPI, type SeriesResponse, SportsAPI, type SportsFilter, type SportsFilters, type SubmitIntentParams, SwapAPI, type SwapInstructionsResponse, type SwapParams, type SwapQuote, type SwapResponse, TRADE_API_BASE_URL, TagsAPI, type Token, type TokenBalance, type TokenWithDecimals, TokensAPI, type Trade, type TradeAction, type TradeSide, type TradeUpdate, TradesAPI, type TradesParams, type TradesResponse, type TransactionConfirmation, USDC_MINT, type UserPosition, type Venue, VenuesAPI, WEBSOCKET_URL, type WebSocketChannel, type WebSocketMessage, type WebSocketOptions, type WebSocketSubscribeMessage, type WebSocketUnsubscribeMessage, type WebSocketUpdate, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };

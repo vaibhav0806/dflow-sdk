@@ -1,5 +1,5 @@
 import { VersionedTransaction } from '@solana/web3.js';
-import { TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token';
 
 // src/utils/http.ts
 var DFlowApiError = class extends Error {
@@ -90,12 +90,12 @@ var HttpClient = class {
 };
 
 // src/utils/constants.ts
-var METADATA_API_BASE_URL = "https://prediction-markets-api.dflow.net/api/v1";
-var TRADE_API_BASE_URL = "https://quote-api.dflow.net";
-var WEBSOCKET_URL = "wss://prediction-markets-api.dflow.net/api/v1/ws";
-var DEV_METADATA_API_BASE_URL = "https://dev-prediction-markets-api.dflow.net/api/v1";
-var DEV_TRADE_API_BASE_URL = "https://dev-quote-api.dflow.net";
-var DEV_WEBSOCKET_URL = "wss://dev-prediction-markets-api.dflow.net/api/v1/ws";
+var METADATA_API_BASE_URL = "https://dev-prediction-markets-api.dflow.net/api/v1";
+var TRADE_API_BASE_URL = "https://dev-quote-api.dflow.net";
+var WEBSOCKET_URL = "wss://dev-prediction-markets-api.dflow.net/api/v1/ws";
+var PROD_METADATA_API_BASE_URL = "https://prediction-markets-api.dflow.net/api/v1";
+var PROD_TRADE_API_BASE_URL = "https://quote-api.dflow.net";
+var PROD_WEBSOCKET_URL = "wss://prediction-markets-api.dflow.net/api/v1/ws";
 var USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 var SOL_MINT = "So11111111111111111111111111111111111111112";
 var DEFAULT_SLIPPAGE_BPS = 50;
@@ -270,7 +270,10 @@ var SearchAPI = class {
     this.http = http;
   }
   async search(params) {
-    return this.http.get("/search", params);
+    return this.http.get("/search", {
+      q: params.query,
+      limit: params.limit
+    });
   }
 };
 
@@ -309,22 +312,28 @@ var SwapAPI = class {
     });
   }
   async createSwap(params) {
-    return this.http.post("/swap", {
+    const quoteResponse = await this.getQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
-      slippageBps: params.slippageBps,
+      amount: params.amount,
+      slippageBps: params.slippageBps
+    });
+    return this.http.post("/swap", {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
       wrapUnwrapSol: params.wrapUnwrapSol,
       priorityFee: params.priorityFee
     });
   }
   async getSwapInstructions(params) {
-    return this.http.post("/swap-instructions", {
+    const quoteResponse = await this.getQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
-      slippageBps: params.slippageBps,
+      amount: params.amount,
+      slippageBps: params.slippageBps
+    });
+    return this.http.post("/swap-instructions", {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
       wrapUnwrapSol: params.wrapUnwrapSol,
       priorityFee: params.priorityFee
@@ -346,13 +355,16 @@ var IntentAPI = class {
     });
   }
   async submitIntent(params) {
-    return this.http.post("/submit-intent", {
+    const quoteResponse = await this.getIntentQuote({
       inputMint: params.inputMint,
       outputMint: params.outputMint,
-      amount: String(params.amount),
-      mode: params.mode,
-      slippageBps: params.slippageBps,
+      amount: params.amount,
+      mode: params.mode
+    });
+    return this.http.post("/submit-intent", {
+      quoteResponse,
       userPublicKey: params.userPublicKey,
+      slippageBps: params.slippageBps,
       priorityFee: params.priorityFee
     });
   }
@@ -598,12 +610,17 @@ var DFlowClient = class {
    * @param options - Client configuration options
    */
   constructor(options) {
+    const env = options?.environment ?? "development";
+    const isProd = env === "production";
+    const metadataUrl = options?.metadataBaseUrl ?? (isProd ? PROD_METADATA_API_BASE_URL : METADATA_API_BASE_URL);
+    const tradeUrl = options?.tradeBaseUrl ?? (isProd ? PROD_TRADE_API_BASE_URL : TRADE_API_BASE_URL);
+    const wsUrl = isProd ? PROD_WEBSOCKET_URL : WEBSOCKET_URL;
     this.metadataHttp = new HttpClient({
-      baseUrl: options?.metadataBaseUrl ?? METADATA_API_BASE_URL,
+      baseUrl: metadataUrl,
       apiKey: options?.apiKey
     });
     this.tradeHttp = new HttpClient({
-      baseUrl: options?.tradeBaseUrl ?? TRADE_API_BASE_URL,
+      baseUrl: tradeUrl,
       apiKey: options?.apiKey
     });
     this.events = new EventsAPI(this.metadataHttp);
@@ -621,7 +638,7 @@ var DFlowClient = class {
     this.predictionMarket = new PredictionMarketAPI(this.tradeHttp);
     this.tokens = new TokensAPI(this.tradeHttp);
     this.venues = new VenuesAPI(this.tradeHttp);
-    this.ws = new DFlowWebSocket(options?.wsOptions);
+    this.ws = new DFlowWebSocket({ ...options?.wsOptions, url: options?.wsOptions?.url ?? wsUrl });
   }
   /**
    * Update the API key for both metadata and trade HTTP clients.
@@ -689,10 +706,16 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 async function getTokenBalances(connection, walletAddress) {
-  const tokenAccounts = await connection.getParsedTokenAccountsByOwner(walletAddress, {
-    programId: TOKEN_2022_PROGRAM_ID
-  });
-  return tokenAccounts.value.map(({ account }) => {
+  const [tokenAccounts, token2022Accounts] = await Promise.all([
+    connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_PROGRAM_ID
+    }),
+    connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_2022_PROGRAM_ID
+    })
+  ]);
+  const allAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+  return allAccounts.map(({ account }) => {
     const info = account.data.parsed.info;
     return {
       mint: info.mint,
@@ -866,6 +889,6 @@ async function findFirst(fetchPage, options, predicate) {
   return void 0;
 }
 
-export { DEFAULT_SLIPPAGE_BPS, DEV_METADATA_API_BASE_URL, DEV_TRADE_API_BASE_URL, DEV_WEBSOCKET_URL, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TokensAPI, TradesAPI, USDC_MINT, VenuesAPI, WEBSOCKET_URL, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };
+export { DEFAULT_SLIPPAGE_BPS, DFlowApiError, DFlowClient, DFlowWebSocket, EventsAPI, HttpClient, IntentAPI, LiveDataAPI, MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES, METADATA_API_BASE_URL, MarketsAPI, OUTCOME_TOKEN_DECIMALS, OrderbookAPI, OrdersAPI, PROD_METADATA_API_BASE_URL, PROD_TRADE_API_BASE_URL, PROD_WEBSOCKET_URL, PredictionMarketAPI, SOL_MINT, SearchAPI, SeriesAPI, SportsAPI, SwapAPI, TRADE_API_BASE_URL, TagsAPI, TokensAPI, TradesAPI, USDC_MINT, VenuesAPI, WEBSOCKET_URL, calculateScalarPayout, collectAll, countAll, createRetryable, defaultShouldRetry, findFirst, getTokenBalances, getUserPositions, isRedemptionEligible, paginate, signAndSendTransaction, signSendAndConfirm, waitForConfirmation, withRetry };
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

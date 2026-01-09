@@ -353,11 +353,35 @@ for (const position of positions) {
 
 ## Configuration
 
+### Environments
+
+The SDK supports two environments:
+
+| Environment | API Key Required | Description |
+|-------------|------------------|-------------|
+| `development` (default) | No | Uses `dev-*.dflow.net` endpoints. For testing with real capital against Kalshi. |
+| `production` | Yes | Uses `*.dflow.net` endpoints. For production deployments. |
+
+```typescript
+// Development (default) - no API key required
+const dflow = new DFlowClient();
+
+// Or explicitly:
+const dflow = new DFlowClient({ environment: 'development' });
+
+// Production - API key required
+const dflow = new DFlowClient({
+  environment: 'production',
+  apiKey: 'your-api-key',
+});
+```
+
+### Additional Options
+
 ```typescript
 const dflow = new DFlowClient({
+  environment: 'production',
   apiKey: 'your-api-key',
-  metadataBaseUrl: 'https://prediction-markets-api.dflow.net/api/v1',
-  tradeBaseUrl: 'https://quote-api.dflow.net',
   wsOptions: {
     reconnect: true,
     reconnectInterval: 5000,
@@ -369,18 +393,18 @@ const dflow = new DFlowClient({
 dflow.setApiKey('new-api-key');
 ```
 
-### Development Endpoints
+### Custom Endpoints
 
 ```typescript
 import {
-  DEV_METADATA_API_BASE_URL,
-  DEV_TRADE_API_BASE_URL,
-  DEV_WEBSOCKET_URL,
+  PROD_METADATA_API_BASE_URL,
+  PROD_TRADE_API_BASE_URL,
 } from 'dflow-sdk';
 
-const devClient = new DFlowClient({
-  metadataBaseUrl: DEV_METADATA_API_BASE_URL,
-  tradeBaseUrl: DEV_TRADE_API_BASE_URL,
+// Override specific URLs if needed
+const client = new DFlowClient({
+  metadataBaseUrl: PROD_METADATA_API_BASE_URL,
+  tradeBaseUrl: PROD_TRADE_API_BASE_URL,
 });
 ```
 
@@ -390,25 +414,27 @@ const devClient = new DFlowClient({
 
 ```typescript
 import {
-  // API URLs
-  METADATA_API_BASE_URL,
-  TRADE_API_BASE_URL,
-  WEBSOCKET_URL,
-  DEV_METADATA_API_BASE_URL,
-  DEV_TRADE_API_BASE_URL,
-  DEV_WEBSOCKET_URL,
+  // API URLs (development - default)
+  METADATA_API_BASE_URL,       // dev-prediction-markets-api.dflow.net
+  TRADE_API_BASE_URL,          // dev-quote-api.dflow.net
+  WEBSOCKET_URL,               // dev-prediction-markets-api.dflow.net/ws
+
+  // API URLs (production - requires API key)
+  PROD_METADATA_API_BASE_URL,  // prediction-markets-api.dflow.net
+  PROD_TRADE_API_BASE_URL,     // quote-api.dflow.net
+  PROD_WEBSOCKET_URL,          // prediction-markets-api.dflow.net/ws
 
   // Token mints
   USDC_MINT,
   SOL_MINT,
 
   // Trading defaults
-  DEFAULT_SLIPPAGE_BPS,      // 50 (0.5%)
-  OUTCOME_TOKEN_DECIMALS,    // 6
+  DEFAULT_SLIPPAGE_BPS,        // 50 (0.5%)
+  OUTCOME_TOKEN_DECIMALS,      // 6
 
   // Limits
-  MAX_BATCH_SIZE,            // 100
-  MAX_FILTER_ADDRESSES,      // 200
+  MAX_BATCH_SIZE,              // 100
+  MAX_FILTER_ADDRESSES,        // 200
 } from 'dflow-sdk';
 ```
 
