@@ -5,25 +5,32 @@ import pytest
 
 @pytest.fixture
 def mock_market_data():
-    """Sample market data for testing."""
+    """Sample market data for testing (matches actual API format)."""
     return {
         "ticker": "BTCD-25DEC0313-T92749.99",
         "title": "Bitcoin above $92,749.99?",
         "subtitle": "Will Bitcoin be above $92,749.99 on December 31, 2025?",
         "eventTicker": "BTCD-25DEC0313",
+        "marketType": "binary",
         "status": "active",
         "result": "",
-        "yesPrice": 0.65,
-        "noPrice": 0.35,
+        "yesBid": "0.6500",
+        "yesAsk": "0.6600",
+        "noBid": "0.3400",
+        "noAsk": "0.3500",
         "volume": 1000000,
         "volume24h": 50000,
         "openInterest": 250000,
         "liquidity": 100000,
+        "openTime": 1704067200,
+        "closeTime": 1735689600,
+        "expirationTime": 1735689600,
         "accounts": {
             "usdc": {
                 "yesMint": "YesMint123456789abcdefghijklmnopqrstuvwxyz",
                 "noMint": "NoMint123456789abcdefghijklmnopqrstuvwxyz",
                 "marketLedger": "Ledger123456789abcdefghijklmnopqrstuvwxyz",
+                "isInitialized": True,
                 "redemptionStatus": "closed",
             }
         },

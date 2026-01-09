@@ -20,7 +20,8 @@ class TestMarketsAPI:
             market = client.markets.get_market("BTCD-25DEC0313-T92749.99")
             
             assert market.ticker == "BTCD-25DEC0313-T92749.99"
-            assert market.yes_price == 0.65
+            assert market.yes_bid == "0.6500"
+            assert market.yes_price == 0.65  # computed property
             assert market.status == "active"
 
     def test_get_markets(self, httpx_mock: HTTPXMock, mock_market_data):

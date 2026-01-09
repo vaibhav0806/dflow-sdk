@@ -136,7 +136,8 @@ class MarketsAPI:
             "/markets/batch",
             {"tickers": tickers or [], "mints": mints or []},
         )
-        return [Market.model_validate(m) for m in data.get("markets", [])]
+        markets_data = data.get("markets", []) if isinstance(data, dict) else data
+        return [Market.model_validate(m) for m in markets_data]
 
     def get_outcome_mints(self) -> list[str]:
         """Get all outcome token mint addresses.

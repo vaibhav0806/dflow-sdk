@@ -1,25 +1,32 @@
 """Live data types for DFlow SDK."""
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class LiveDataMilestone(BaseModel):
     """Milestone in live data."""
 
-    id: str
-    name: str
+    id: str | None = None
+    name: str | None = None
     value: str | int | float | None = None
-    timestamp: str | None = None
+    timestamp: str | int | None = None
 
 
 class LiveData(BaseModel):
-    """Live data for an event."""
+    """Live data for an event or market.
 
-    event_ticker: str | None = None
-    milestones: list[LiveDataMilestone]
+    Note: The actual structure depends on the specific event type.
+    Use model_extra to access additional fields.
+    """
+
+    model_config = {"extra": "allow"}
 
 
 class LiveDataResponse(BaseModel):
     """Response from live data endpoint."""
 
-    data: list[LiveData]
+    live_datas: list[dict[str, Any]] = Field(default_factory=list, alias="live_datas")
+
+    model_config = {"populate_by_name": True}

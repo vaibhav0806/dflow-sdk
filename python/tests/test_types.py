@@ -36,8 +36,10 @@ class TestMarketTypes:
         assert market.event_ticker == "BTCD-25DEC0313"
         assert market.status == "active"
         assert market.result == ""
-        assert market.yes_price == 0.65
-        assert market.no_price == 0.35
+        assert market.yes_bid == "0.6500"
+        assert market.no_bid == "0.3400"
+        assert market.yes_price == 0.65  # computed from yes_bid
+        assert market.no_price == 0.34   # computed from no_bid
         assert market.volume == 1000000
         assert "usdc" in market.accounts
         assert market.accounts["usdc"].yes_mint == "YesMint123456789abcdefghijklmnopqrstuvwxyz"
