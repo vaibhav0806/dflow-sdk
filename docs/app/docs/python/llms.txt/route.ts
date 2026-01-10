@@ -1,50 +1,67 @@
-import { pythonSource } from '@/lib/source';
+import { join } from 'path';
+import { generateLLMDocs } from '@/lib/extract-mdx-content';
 
 export const revalidate = false;
 
+const SITE_URL = 'https://dflow-sdk.vercel.app';
+
 export async function GET() {
-  const pages = pythonSource.getPages();
+  const contentDir = join(process.cwd(), 'content/docs/python');
+  const fullDocs = generateLLMDocs(contentDir, 'Python', `${SITE_URL}/docs/python`);
 
-  const header = `# DFlow Python SDK Documentation
-This is the complete documentation for the DFlow Python SDK - a Pythonic SDK for building on DFlow's Solana-based prediction markets and trading platform.
+  const header = `################################################################################
+#                          DFLOW PYTHON SDK DOCUMENTATION                        #
+################################################################################
 
-Website: https://dflow-sdk.vercel.app
-SDK Repository: https://github.com/vaibhav0806/dflow-sdk
-PyPI Package: https://pypi.org/project/dflow-sdk/
+This is the complete documentation for the DFlow Python SDK - a Pythonic SDK
+for building on DFlow's Solana-based prediction markets and trading platform.
 
-## Installation
+RESOURCES:
+• Website: ${SITE_URL}
+• Documentation: ${SITE_URL}/docs/python
+• GitHub: https://github.com/vaibhav0806/dflow-sdk
+• PyPI: https://pypi.org/project/dflow-sdk/
 
-\`\`\`bash
+INSTALLATION:
+[BASH CODE]
 pip install dflow-sdk
 # or
 uv add dflow-sdk
-\`\`\`
+# or
+poetry add dflow-sdk
+[END CODE]
 
----
+QUICK START:
+[PYTHON CODE]
+from dflow import DFlowClient
 
-## Table of Contents
+client = DFlowClient()
 
-${pages.map((page) => `- ${page.data.title} (${page.url})`).join('\n')}
+# Get active markets
+markets = client.markets.get_markets(status="active")
 
----
+# Subscribe to real-time prices (async)
+async with client.ws as ws:
+    await ws.subscribe_prices(["market-ticker"])
+    async for price in ws.prices():
+        print(price)
+[END CODE]
 
-## Full Documentation
+################################################################################
+#                              FULL DOCUMENTATION                               #
+################################################################################
 
+${fullDocs}
+
+################################################################################
+#                              END OF DOCUMENTATION                             #
+################################################################################
 `;
 
-  const content = pages
-    .map((page) => {
-      return `### ${page.data.title}
-URL: https://dflow-sdk.vercel.app${page.url}
-${page.data.description ? `Description: ${page.data.description}` : ''}
-
----`;
-    })
-    .join('\n\n');
-
-  return new Response(header + content, {
+  return new Response(header, {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400, s-maxage=86400',
     },
   });
 }
