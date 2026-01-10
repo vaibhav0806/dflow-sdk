@@ -1,4 +1,4 @@
-import { source } from '@/lib/source';
+import { typescriptSource } from '@/lib/source';
 import {
   DocsPage,
   DocsBody,
@@ -15,7 +15,7 @@ export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
 }) {
   const params = await props.params;
-  const page = source.getPage(params.slug);
+  const page = typescriptSource.getPage(params.slug);
   if (!page) notFound();
 
   const MDX = page.data.body;
@@ -32,27 +32,27 @@ export default async function Page(props: {
 }
 
 export async function generateStaticParams() {
-  return source.generateParams();
+  return typescriptSource.generateParams();
 }
 
 export async function generateMetadata(props: {
   params: Promise<{ slug?: string[] }>;
 }): Promise<Metadata> {
   const params = await props.params;
-  const page = source.getPage(params.slug);
+  const page = typescriptSource.getPage(params.slug);
   if (!page) notFound();
 
   const title = page.data.title;
   const description =
     page.data.description ||
-    `Learn about ${page.data.title} in the DFlow SDK documentation.`;
+    `Learn about ${page.data.title} in the DFlow TypeScript SDK documentation.`;
   const url = `${siteUrl}${page.url}`;
 
   return {
-    title,
+    title: `${title} | TypeScript SDK`,
     description,
     openGraph: {
-      title: `${title} | DFlow SDK`,
+      title: `${title} | DFlow TypeScript SDK`,
       description,
       url,
       type: 'article',
@@ -60,7 +60,7 @@ export async function generateMetadata(props: {
     },
     twitter: {
       card: 'summary',
-      title: `${title} | DFlow SDK`,
+      title: `${title} | DFlow TypeScript SDK`,
       description,
     },
     alternates: {

@@ -1,0 +1,104 @@
+---
+title: Events API
+description: Fetch and query events
+---
+
+# Events API
+
+The Events API provides methods to fetch and query events on DFlow. Events are collections of related markets.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+events_api = client.events
+```
+
+## Methods
+
+### get_events
+
+Fetch multiple events with optional filtering.
+
+```python
+def get_events(
+    status: str | None = None,
+    series_ticker: str | None = None,
+    cursor: str | None = None,
+    limit: int | None = None,
+    with_nested_markets: bool = False
+) -> EventsResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | `str \| None` | Filter by status |
+| `series_ticker` | `str \| None` | Filter by series ticker |
+| `cursor` | `str \| None` | Pagination cursor |
+| `limit` | `int \| None` | Number of results per page |
+| `with_nested_markets` | `bool` | Include nested market data |
+
+#### Example
+
+```python
+# Get active events
+events = client.events.get_events(status="active")
+
+for event in events.events:
+    print(f"{event.ticker}: {event.title}")
+
+# Get events with their markets
+events = client.events.get_events(with_nested_markets=True)
+for event in events.events:
+    print(f"{event.title} has {len(event.markets or [])} markets")
+```
+
+### get_event
+
+Fetch a single event by ticker.
+
+```python
+def get_event(
+    event_ticker: str,
+    with_nested_markets: bool = False
+) -> Event
+```
+
+#### Example
+
+```python
+event = client.events.get_event("BTCUSD-25JAN", with_nested_markets=True)
+print(f"Event: {event.title}")
+print(f"Markets: {len(event.markets or [])}")
+```
+
+## Types
+
+### Event
+
+```python
+class Event(BaseModel):
+    ticker: str
+    title: str
+    subtitle: str | None
+    series_ticker: str
+    strike_date: str | int | None
+    expiration_time: str | int | None
+    volume: float | None
+    liquidity: float | None
+    open_interest: float | None
+    markets: list[Market] | None
+    # ... additional fields
+```
+
+### EventsResponse
+
+```python
+class EventsResponse(BaseModel):
+    events: list[Event]
+    cursor: str | None
+```

@@ -1,0 +1,65 @@
+---
+title: Series API
+description: Fetch series information
+---
+
+# Series API
+
+The Series API provides methods to fetch series information. Series group related events together.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+series_api = client.series
+```
+
+## Methods
+
+### get_series
+
+Fetch all series or filter by criteria.
+
+```python
+def get_series(
+    cursor: str | None = None,
+    limit: int | None = None
+) -> list[Series]
+```
+
+### get_series_by_ticker
+
+Fetch a specific series by its ticker.
+
+```python
+def get_series_by_ticker(ticker: str) -> Series
+```
+
+#### Example
+
+```python
+# Get all series
+all_series = client.series.get_series()
+
+for series in all_series:
+    print(f"{series.ticker}: {series.title}")
+
+# Get specific series
+btc_series = client.series.get_series_by_ticker("BTCUSD")
+print(f"Series: {btc_series.title}")
+```
+
+## Types
+
+### Series
+
+```python
+class Series(BaseModel):
+    ticker: str
+    title: str
+    description: str | None
+    category: str | None
+    tags: list[str] | None
+```

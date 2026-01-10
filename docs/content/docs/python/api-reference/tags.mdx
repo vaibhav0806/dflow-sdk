@@ -1,0 +1,50 @@
+---
+title: Tags API
+description: Fetch tag information for categorizing markets
+---
+
+# Tags API
+
+The Tags API provides methods to fetch tags used for categorizing markets and events.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+tags_api = client.tags
+```
+
+## Methods
+
+### get_tags
+
+Fetch all available tags grouped by category.
+
+```python
+def get_tags() -> dict[str, list[str]]
+```
+
+#### Example
+
+```python
+tags = client.tags.get_tags()
+
+for category, tag_list in tags.items():
+    print(f"{category}:")
+    for tag in tag_list:
+        print(f"  - {tag}")
+```
+
+## Response Format
+
+The response is a dictionary where keys are category names and values are lists of tags:
+
+```python
+{
+    "crypto": ["bitcoin", "ethereum", "solana"],
+    "politics": ["elections", "policy"],
+    "sports": ["nfl", "nba", "mlb"]
+}
+```

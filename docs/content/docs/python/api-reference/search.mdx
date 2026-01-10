@@ -1,0 +1,59 @@
+---
+title: Search API
+description: Search for markets and events
+---
+
+# Search API
+
+The Search API provides methods to search for markets and events by query string.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+search_api = client.search
+```
+
+## Methods
+
+### search
+
+Search for markets and events.
+
+```python
+def search(
+    query: str,
+    limit: int | None = None
+) -> list[SearchResult]
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `query` | `str` | Search query string |
+| `limit` | `int \| None` | Maximum number of results |
+
+#### Example
+
+```python
+results = client.search.search("bitcoin", limit=10)
+
+for result in results:
+    print(f"[{result.type}] {result.ticker}: {result.title}")
+```
+
+## Types
+
+### SearchResult
+
+```python
+class SearchResult(BaseModel):
+    type: str  # "market" or "event"
+    ticker: str
+    title: str
+    subtitle: str | None
+    status: str
+```

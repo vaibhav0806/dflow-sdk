@@ -1,0 +1,102 @@
+---
+title: Orders API
+description: Place and manage orders on prediction markets
+---
+
+# Orders API
+
+The Orders API provides methods to place, cancel, and query orders on prediction markets.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+orders_api = client.orders
+```
+
+## Methods
+
+### create_order
+
+Create a new limit order.
+
+```python
+def create_order(
+    market_id: str,
+    side: str,
+    type: str,
+    price: float,
+    size: float,
+    user_public_key: str
+) -> OrderResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market to place order on |
+| `side` | `str` | "yes" or "no" |
+| `type` | `str` | "buy" or "sell" |
+| `price` | `float` | Limit price (0.01 to 0.99) |
+| `size` | `float` | Number of contracts |
+| `user_public_key` | `str` | User's Solana public key |
+
+#### Example
+
+```python
+order = client.orders.create_order(
+    market_id="BTCUSD-25JAN-100000",
+    side="yes",
+    type="buy",
+    price=0.65,
+    size=100,
+    user_public_key=str(keypair.pubkey())
+)
+
+# Sign and send the transaction
+signature = sign_and_send_transaction(order.transaction, keypair)
+```
+
+### cancel_order
+
+Cancel an existing order.
+
+```python
+def cancel_order(
+    order_id: str,
+    user_public_key: str
+) -> OrderResponse
+```
+
+### get_order_status
+
+Get the status of an order.
+
+```python
+def get_order_status(order_id: str) -> OrderStatusResponse
+```
+
+## Types
+
+### OrderResponse
+
+```python
+class OrderResponse(BaseModel):
+    order_id: str
+    transaction: str  # Base64 encoded
+    status: str
+```
+
+### OrderStatusResponse
+
+```python
+class OrderStatusResponse(BaseModel):
+    order_id: str
+    status: str  # "open", "filled", "cancelled", "partial"
+    filled_size: float
+    remaining_size: float
+    average_price: float | None
+```

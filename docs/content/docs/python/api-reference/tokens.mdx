@@ -1,0 +1,70 @@
+---
+title: Tokens API
+description: Fetch token information
+---
+
+# Tokens API
+
+The Tokens API provides methods to fetch information about supported tokens.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+tokens_api = client.tokens
+```
+
+## Methods
+
+### get_tokens
+
+Fetch all supported tokens.
+
+```python
+def get_tokens() -> list[Token]
+```
+
+### get_collateral_tokens
+
+Fetch supported collateral tokens.
+
+```python
+def get_collateral_tokens() -> list[str]
+```
+
+#### Example
+
+```python
+# Get all tokens
+tokens = client.tokens.get_tokens()
+
+for token in tokens:
+    print(f"{token.symbol}: {token.mint}")
+
+# Get collateral tokens
+collateral = client.tokens.get_collateral_tokens()
+print("Supported collateral:", collateral)
+```
+
+## Types
+
+### Token
+
+```python
+class Token(BaseModel):
+    mint: str
+    symbol: str
+    name: str
+    decimals: int
+    logo_uri: str | None
+```
+
+### TokenWithDecimals
+
+```python
+class TokenWithDecimals(BaseModel):
+    mint: str
+    decimals: int
+```

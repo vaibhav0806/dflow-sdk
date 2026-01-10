@@ -1,0 +1,150 @@
+---
+title: Markets API
+description: Fetch and query prediction markets
+---
+
+# Markets API
+
+The Markets API provides methods to fetch and query prediction markets on DFlow.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+markets_api = client.markets
+```
+
+## Methods
+
+### get_markets
+
+Fetch multiple markets with optional filtering.
+
+```python
+def get_markets(
+    status: str | None = None,
+    event_ticker: str | None = None,
+    series_ticker: str | None = None,
+    tickers: list[str] | None = None,
+    cursor: str | None = None,
+    limit: int | None = None
+) -> MarketsResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `status` | `str \| None` | Filter by status: "active", "closed", "settled" |
+| `event_ticker` | `str \| None` | Filter by event ticker |
+| `series_ticker` | `str \| None` | Filter by series ticker |
+| `tickers` | `list[str] \| None` | Filter by specific market tickers |
+| `cursor` | `str \| None` | Pagination cursor |
+| `limit` | `int \| None` | Number of results per page |
+
+#### Example
+
+```python
+# Get active markets
+markets = client.markets.get_markets(status="active")
+
+for market in markets.markets:
+    print(f"{market.ticker}: Yes ${market.yes_bid}")
+
+# Paginate through results
+if markets.cursor:
+    next_page = client.markets.get_markets(cursor=markets.cursor)
+```
+
+### get_market
+
+Fetch a single market by ID.
+
+```python
+def get_market(market_id: str) -> Market
+```
+
+#### Example
+
+```python
+market = client.markets.get_market("BTCUSD-25JAN-100000")
+print(f"Status: {market.status}")
+print(f"Yes Bid: ${market.yes_bid}")
+```
+
+### get_markets_batch
+
+Fetch multiple markets by their IDs in a single request.
+
+```python
+def get_markets_batch(market_ids: list[str]) -> list[Market]
+```
+
+#### Example
+
+```python
+markets = client.markets.get_markets_batch([
+    "market-id-1",
+    "market-id-2",
+    "market-id-3"
+])
+
+for market in markets:
+    print(f"{market.ticker}: {market.status}")
+```
+
+### get_market_tickers
+
+Get all available market tickers.
+
+```python
+def get_market_tickers() -> list[str]
+```
+
+### get_market_tickers_for_event
+
+Get market tickers for a specific event.
+
+```python
+def get_market_tickers_for_event(event_ticker: str) -> list[str]
+```
+
+## Types
+
+### Market
+
+```python
+class Market(BaseModel):
+    ticker: str
+    event_ticker: str
+    status: MarketStatus
+    result: MarketResult
+    yes_bid: str | None
+    yes_ask: str | None
+    no_bid: str | None
+    no_ask: str | None
+    volume: float | None
+    open_interest: float | None
+    liquidity: float | None
+    accounts: dict[str, MarketAccount]
+    # ... additional fields
+```
+
+### MarketStatus
+
+```python
+class MarketStatus(str, Enum):
+    ACTIVE = "active"
+    CLOSED = "closed"
+    SETTLED = "settled"
+```
+
+### MarketsResponse
+
+```python
+class MarketsResponse(BaseModel):
+    markets: list[Market]
+    cursor: str | None
+```

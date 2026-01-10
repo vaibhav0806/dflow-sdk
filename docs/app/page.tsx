@@ -114,11 +114,18 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
         <div className="mt-12 flex flex-col gap-2">
           <Link
-            href="/docs"
+            href="/docs/typescript"
             onClick={onClose}
             className="rounded-lg px-4 py-3 text-[15px] font-medium text-[hsl(215,20%,65%)] transition-all hover:bg-[hsl(218,35%,12%)] hover:text-white"
           >
-            Documentation
+            TypeScript SDK
+          </Link>
+          <Link
+            href="/docs/python"
+            onClick={onClose}
+            className="rounded-lg px-4 py-3 text-[15px] font-medium text-[hsl(215,20%,65%)] transition-all hover:bg-[hsl(218,35%,12%)] hover:text-white"
+          >
+            Python SDK
           </Link>
           <Link
             href="https://github.com/vaibhav0806/dflow-sdk"
@@ -148,18 +155,27 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 }
 
 // Package manager install component with tabs
-function InstallCommand() {
-  const [activeTab, setActiveTab] = useState<'pnpm' | 'npm' | 'bun'>('pnpm');
+function InstallCommand({ language = 'typescript' }: { language?: 'typescript' | 'python' }) {
+  const [activeTab, setActiveTab] = useState<string>(language === 'typescript' ? 'pnpm' : 'pip');
   const [copied, setCopied] = useState(false);
 
-  const commands = {
+  const tsCommands = {
     pnpm: 'pnpm add dflow-sdk',
     npm: 'npm install dflow-sdk',
     bun: 'bun add dflow-sdk',
   };
 
+  const pyCommands = {
+    pip: 'pip install dflow-sdk',
+    uv: 'uv add dflow-sdk',
+    poetry: 'poetry add dflow-sdk',
+  };
+
+  const commands = language === 'typescript' ? tsCommands : pyCommands;
+  const tabs = language === 'typescript' ? ['pnpm', 'npm', 'bun'] : ['pip', 'uv', 'poetry'];
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(commands[activeTab]);
+    navigator.clipboard.writeText(commands[activeTab as keyof typeof commands]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -168,7 +184,7 @@ function InstallCommand() {
     <div className="inline-flex flex-col items-center">
       {/* Tabs */}
       <div className="mb-3 flex gap-1 rounded-lg border border-[hsl(218,35%,15%)] bg-[hsl(220,40%,7%)] p-1">
-        {(['pnpm', 'npm', 'bun'] as const).map((pm) => (
+        {tabs.map((pm) => (
           <button
             key={pm}
             onClick={() => setActiveTab(pm)}
@@ -186,7 +202,7 @@ function InstallCommand() {
       {/* Command */}
       <div className="flex items-center gap-3 rounded-lg border border-[hsl(218,35%,15%)] bg-[hsl(220,40%,9%)] px-6 py-3 font-mono text-sm">
         <span className="text-[hsl(215,15%,45%)]">$</span>
-        <span className="text-white">{commands[activeTab]}</span>
+        <span className="text-white">{commands[activeTab as keyof typeof commands]}</span>
         <button
           onClick={handleCopy}
           className="ml-4 text-[hsl(215,20%,65%)] transition-colors hover:text-[hsl(174,100%,50%)]"
@@ -409,10 +425,16 @@ export default function HomePage() {
           {/* Desktop nav links */}
           <div className="desktop-nav-links items-center gap-6">
             <Link
-              href="/docs"
+              href="/docs/typescript"
               className="text-sm font-medium text-[hsl(215,20%,65%)] transition-colors hover:text-white"
             >
-              Documentation
+              TypeScript
+            </Link>
+            <Link
+              href="/docs/python"
+              className="text-sm font-medium text-[hsl(215,20%,65%)] transition-colors hover:text-white"
+            >
+              Python
             </Link>
             <Link
               href="https://github.com/vaibhav0806/dflow-sdk"
@@ -454,7 +476,7 @@ export default function HomePage() {
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[hsl(174,100%,50%)]" />
                 </span>
                 <span className="font-mono text-[11px] font-medium tracking-wide text-[hsl(174,100%,55%)] sm:text-[13px]">
-                  TypeScript SDK for Solana
+                  TypeScript & Python SDKs for Solana
                 </span>
                 <svg className="hidden h-3.5 w-3.5 text-[hsl(215,20%,50%)] transition-colors group-hover:text-[hsl(174,100%,50%)] sm:block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -506,7 +528,7 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link
-                href="/docs/api-reference/client"
+                href="/docs/typescript/api-reference/client"
                 className="cta-btn group inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-[hsl(218,35%,20%)] bg-[hsl(220,40%,9%)] px-8 font-semibold text-white transition-all hover:border-[hsl(174,100%,42%,0.5)] hover:bg-[hsl(216,30%,12%)]"
               >
                 <svg className="h-4 w-4 text-[hsl(215,20%,60%)] transition-colors group-hover:text-[hsl(174,100%,50%)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -680,28 +702,67 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Install Section */}
+        {/* SDK Selection Section */}
         <section className="border-t border-[hsl(218,35%,12%)] px-6 py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-4 text-3xl font-bold text-white">Get Started in Seconds</h2>
-            <p className="mb-8 text-[hsl(215,20%,65%)]">Install the SDK and start building</p>
-
-            <div className="mb-8">
-              <InstallCommand />
+          <div className="mx-auto max-w-5xl">
+            <div className="mb-12 text-center">
+              <h2 className="mb-4 text-3xl font-bold text-white">Choose Your SDK</h2>
+              <p className="text-[hsl(215,20%,65%)]">Available for both TypeScript and Python developers</p>
             </div>
 
-            <div className="flex justify-center gap-4">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* TypeScript Card */}
               <Link
-                href="/docs/getting-started/installation"
-                className="text-sm font-medium text-[hsl(174,100%,50%)] transition-colors hover:text-[hsl(174,100%,60%)]"
+                href="/docs/typescript"
+                className="group relative overflow-hidden rounded-2xl border border-[hsl(218,35%,18%)] bg-[hsl(222,47%,8%)] p-6 transition-all duration-300 hover:border-blue-500/50 hover:bg-[hsl(222,47%,9%)]"
               >
-                Installation Guide →
+                <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-blue-500 opacity-0 blur-[80px] transition-opacity duration-500 group-hover:opacity-20" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M1.125 0C.502 0 0 .502 0 1.125v21.75C0 23.498.502 24 1.125 24h21.75c.623 0 1.125-.502 1.125-1.125V1.125C24 .502 23.498 0 22.875 0zm17.363 9.75c.612 0 1.154.037 1.627.111a6.38 6.38 0 0 1 1.306.34v2.458a3.95 3.95 0 0 0-.643-.361 5.093 5.093 0 0 0-.717-.26 5.453 5.453 0 0 0-1.426-.2c-.3 0-.573.028-.819.086a2.1 2.1 0 0 0-.623.242c-.17.104-.3.229-.393.374a.888.888 0 0 0-.14.49c0 .196.053.373.156.529.104.156.252.304.443.444s.423.276.696.41c.273.135.582.274.926.416.47.197.892.407 1.266.628.374.222.695.473.963.753.268.279.472.598.614.957.142.359.214.776.214 1.253 0 .657-.125 1.21-.373 1.656a3.033 3.033 0 0 1-1.012 1.085 4.38 4.38 0 0 1-1.487.596c-.566.12-1.163.18-1.79.18a9.916 9.916 0 0 1-1.84-.164 5.544 5.544 0 0 1-1.512-.493v-2.63a5.033 5.033 0 0 0 3.237 1.2c.333 0 .624-.03.872-.09.249-.06.456-.144.623-.25.166-.108.29-.234.373-.38a1.023 1.023 0 0 0-.074-1.089 2.12 2.12 0 0 0-.537-.5 5.597 5.597 0 0 0-.807-.444 27.72 27.72 0 0 0-1.007-.436c-.918-.383-1.602-.852-2.053-1.405-.45-.553-.676-1.222-.676-2.005 0-.614.123-1.141.369-1.582.246-.441.58-.804 1.004-1.089a4.494 4.494 0 0 1 1.47-.629 7.536 7.536 0 0 1 1.77-.201zm-15.113.188h9.563v2.166H9.506v9.646H6.789v-9.646H3.375z"/>
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-white">TypeScript SDK</h3>
+                <p className="mb-4 text-sm text-[hsl(215,20%,60%)]">
+                  Full-featured SDK for Node.js and browsers with complete type safety.
+                </p>
+                <div className="mb-4 rounded-lg border border-[hsl(218,35%,15%)] bg-[hsl(220,40%,7%)] px-4 py-2.5 font-mono text-sm">
+                  <span className="text-[hsl(215,15%,45%)]">$ </span>
+                  <span className="text-white">pnpm add dflow-sdk</span>
+                </div>
+                <div className="flex items-center text-sm font-medium text-blue-400">
+                  Get Started
+                  <svg className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </Link>
+
+              {/* Python Card */}
               <Link
-                href="/docs/getting-started/quickstart"
-                className="text-sm font-medium text-[hsl(174,100%,50%)] transition-colors hover:text-[hsl(174,100%,60%)]"
+                href="/docs/python"
+                className="group relative overflow-hidden rounded-2xl border border-[hsl(218,35%,18%)] bg-[hsl(222,47%,8%)] p-6 transition-all duration-300 hover:border-yellow-500/50 hover:bg-[hsl(222,47%,9%)]"
               >
-                Quickstart Tutorial →
+                <div className="pointer-events-none absolute -right-20 -top-20 h-40 w-40 rounded-full bg-yellow-500 opacity-0 blur-[80px] transition-opacity duration-500 group-hover:opacity-20" />
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-400">
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z"/>
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-white">Python SDK</h3>
+                <p className="mb-4 text-sm text-[hsl(215,20%,60%)]">
+                  Pythonic SDK with async support, Pydantic models, and type hints.
+                </p>
+                <div className="mb-4 rounded-lg border border-[hsl(218,35%,15%)] bg-[hsl(220,40%,7%)] px-4 py-2.5 font-mono text-sm">
+                  <span className="text-[hsl(215,15%,45%)]">$ </span>
+                  <span className="text-white">pip install dflow-sdk</span>
+                </div>
+                <div className="flex items-center text-sm font-medium text-yellow-400">
+                  Get Started
+                  <svg className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </Link>
             </div>
           </div>

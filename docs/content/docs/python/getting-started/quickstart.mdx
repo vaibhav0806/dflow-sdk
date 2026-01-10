@@ -1,0 +1,158 @@
+---
+title: Quickstart
+description: Get started with the DFlow Python SDK in minutes
+---
+
+# Quickstart
+
+This guide will help you get up and running with the DFlow Python SDK in just a few minutes.
+
+## Initialize the Client
+
+```python
+from dflow import DFlowClient
+
+# Create a client instance
+client = DFlowClient()
+```
+
+## Fetch Markets
+
+```python
+# Get all active markets
+markets = client.markets.get_markets(status="active")
+
+for market in markets.markets[:5]:
+    print(f"{market.ticker}: Yes ${market.yes_bid} / ${market.yes_ask}")
+```
+
+## Get Market Details
+
+```python
+# Get a specific market by ID
+market = client.markets.get_market("market-id-here")
+print(f"Market: {market.ticker}")
+print(f"Status: {market.status}")
+```
+
+## Fetch Orderbook
+
+```python
+# Get orderbook for a market
+orderbook = client.orderbook.get_orderbook("market-id-here")
+
+print("Bids:")
+for level in orderbook.bids[:3]:
+    print(f"  ${level.price} - {level.quantity} contracts")
+
+print("Asks:")
+for level in orderbook.asks[:3]:
+    print(f"  ${level.price} - {level.quantity} contracts")
+```
+
+## Browse Events
+
+```python
+# Get upcoming events
+events = client.events.get_events(status="active")
+
+for event in events.events[:5]:
+    print(f"{event.ticker}: {event.title}")
+```
+
+## Real-time WebSocket Updates
+
+```python
+import asyncio
+from dflow import DFlowClient
+
+async def main():
+    client = DFlowClient()
+    
+    async with client.ws as ws:
+        # Subscribe to price updates
+        await ws.subscribe_prices(["market-id-1", "market-id-2"])
+        
+        # Listen for updates
+        async for price in ws.prices():
+            print(f"Market {price.market_id}: ${price.yes_price}")
+
+asyncio.run(main())
+```
+
+## Get a Swap Quote
+
+```python
+# Get a quote for buying YES tokens
+quote = client.swap.get_quote(
+    market_id="market-id-here",
+    side="yes",
+    size=100,  # 100 contracts
+    type="buy"
+)
+
+print(f"Average price: ${quote.avg_price}")
+print(f"Total cost: ${quote.total_cost}")
+```
+
+## Execute a Swap (Requires Wallet)
+
+```python
+from solders.keypair import Keypair
+from dflow import sign_and_send_transaction
+
+# Load your wallet
+keypair = Keypair.from_base58_string("your-private-key")
+
+# Get swap transaction
+swap_response = client.swap.create_swap(
+    market_id="market-id-here",
+    side="yes",
+    size=100,
+    type="buy",
+    user_public_key=str(keypair.pubkey())
+)
+
+# Sign and send
+signature = sign_and_send_transaction(
+    swap_response.transaction,
+    keypair
+)
+print(f"Transaction: {signature}")
+```
+
+## Error Handling
+
+```python
+from dflow import DFlowClient, DFlowApiError
+
+client = DFlowClient()
+
+try:
+    market = client.markets.get_market("invalid-id")
+except DFlowApiError as e:
+    print(f"API Error: {e.message}")
+    print(f"Status Code: {e.status_code}")
+```
+
+## Using Pagination
+
+```python
+from dflow import collect_all, paginate
+
+# Collect all markets (auto-paginate)
+all_markets = collect_all(
+    lambda cursor: client.markets.get_markets(cursor=cursor)
+)
+
+# Or iterate page by page
+for page in paginate(lambda c: client.markets.get_markets(cursor=c)):
+    for market in page.markets:
+        print(market.ticker)
+```
+
+## Next Steps
+
+- Explore the [API Reference](/docs/python/api-reference/client) for detailed documentation
+- Learn about [WebSocket connections](/docs/python/api-reference/websocket) for real-time data
+- Check out [Solana helpers](/docs/python/api-reference/solana-helpers) for transaction utilities

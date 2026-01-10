@@ -1,0 +1,90 @@
+---
+title: Installation
+description: How to install the DFlow Python SDK
+---
+
+# Installation
+
+## Requirements
+
+- Python 3.10 or higher
+- A Solana wallet (for trading operations)
+
+## Package Managers
+
+### pip
+
+```bash
+pip install dflow-sdk
+```
+
+### uv (Recommended)
+
+```bash
+uv add dflow-sdk
+```
+
+### poetry
+
+```bash
+poetry add dflow-sdk
+```
+
+## Dependencies
+
+The SDK automatically installs the following dependencies:
+
+- `solana` - Solana Python SDK
+- `solders` - Solana data structures
+- `httpx` - Modern HTTP client
+- `websockets` - WebSocket support
+- `pydantic` - Data validation and serialization
+
+## Verify Installation
+
+```python
+from dflow import DFlowClient, __version__
+
+print(f"DFlow SDK version: {__version__}")
+
+# Create a client instance
+client = DFlowClient()
+print("✓ SDK installed successfully!")
+```
+
+## Environment Configuration
+
+### API Keys (Optional)
+
+For authenticated endpoints, set your API key:
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+client.set_api_key("your-api-key")
+```
+
+Or via environment variable:
+
+```bash
+export DFLOW_API_KEY="your-api-key"
+```
+
+### Production vs Development
+
+By default, the SDK connects to the development environment. For production:
+
+```python
+from dflow import DFlowClient, DFlowEnvironment
+
+# Production environment
+client = DFlowClient(environment=DFlowEnvironment.PRODUCTION)
+
+# Development environment (default)
+client = DFlowClient(environment=DFlowEnvironment.DEVELOPMENT)
+```
+
+## Next Steps
+
+Now that you have the SDK installed, check out the [Quickstart Guide](/docs/python/getting-started/quickstart) to start building.

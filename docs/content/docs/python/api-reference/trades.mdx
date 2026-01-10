@@ -1,0 +1,73 @@
+---
+title: Trades API
+description: Fetch trade history for markets
+---
+
+# Trades API
+
+The Trades API provides methods to fetch historical trade data for prediction markets.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+trades_api = client.trades
+```
+
+## Methods
+
+### get_trades
+
+Fetch trades for a market or globally.
+
+```python
+def get_trades(
+    market_id: str | None = None,
+    cursor: str | None = None,
+    limit: int | None = None
+) -> TradesResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str \| None` | Filter by market ID |
+| `cursor` | `str \| None` | Pagination cursor |
+| `limit` | `int \| None` | Number of results per page |
+
+#### Example
+
+```python
+# Get recent trades for a market
+trades = client.trades.get_trades(market_id="BTCUSD-25JAN-100000")
+
+for trade in trades.trades:
+    print(f"{trade.timestamp}: {trade.side} {trade.size} @ ${trade.price}")
+```
+
+## Types
+
+### Trade
+
+```python
+class Trade(BaseModel):
+    id: str
+    market_id: str
+    price: str
+    size: str
+    side: str
+    timestamp: str
+    taker: str | None
+    maker: str | None
+```
+
+### TradesResponse
+
+```python
+class TradesResponse(BaseModel):
+    trades: list[Trade]
+    cursor: str | None
+```

@@ -1,0 +1,49 @@
+---
+title: Sports API
+description: Fetch sports-specific market data and filters
+---
+
+# Sports API
+
+The Sports API provides methods to fetch sports-specific market data and available filters.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+sports_api = client.sports
+```
+
+## Methods
+
+### get_filters
+
+Fetch available sports filters.
+
+```python
+def get_filters() -> SportsFilters
+```
+
+#### Example
+
+```python
+filters = client.sports.get_filters()
+
+print("Leagues:", filters.leagues)
+print("Sports:", filters.sports)
+print("Teams:", filters.teams)
+```
+
+## Types
+
+### SportsFilters
+
+```python
+class SportsFilters(BaseModel):
+    leagues: list[str]
+    sports: list[str]
+    teams: list[str]
+    competitions: list[str] | None
+```

@@ -1,4 +1,22 @@
-import { source } from '@/lib/source';
-import { createFromSource } from 'fumadocs-core/search/server';
+import { typescriptSource, pythonSource } from '@/lib/source';
+import { createSearchAPI } from 'fumadocs-core/search/server';
 
-export const { GET } = createFromSource(source);
+// Create a combined search across both sources
+export const { GET } = createSearchAPI('advanced', {
+  indexes: [
+    ...typescriptSource.getPages().map((page) => ({
+      title: page.data.title,
+      description: page.data.description,
+      url: page.url,
+      id: page.url,
+      structuredData: page.data.structuredData,
+    })),
+    ...pythonSource.getPages().map((page) => ({
+      title: page.data.title,
+      description: page.data.description,
+      url: page.url,
+      id: page.url,
+      structuredData: page.data.structuredData,
+    })),
+  ],
+});

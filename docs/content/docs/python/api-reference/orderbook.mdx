@@ -1,0 +1,91 @@
+---
+title: Orderbook API
+description: Fetch orderbook data for markets
+---
+
+# Orderbook API
+
+The Orderbook API provides methods to fetch orderbook data for prediction markets.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+orderbook_api = client.orderbook
+```
+
+## Methods
+
+### get_orderbook
+
+Fetch the orderbook for a specific market.
+
+```python
+def get_orderbook(
+    market_id: str,
+    depth: int | None = None
+) -> Orderbook
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market ticker or ID |
+| `depth` | `int \| None` | Number of price levels to return |
+
+#### Example
+
+```python
+orderbook = client.orderbook.get_orderbook("BTCUSD-25JAN-100000")
+
+print("Best Bid:", orderbook.bids[0] if orderbook.bids else "None")
+print("Best Ask:", orderbook.asks[0] if orderbook.asks else "None")
+
+# With depth limit
+orderbook = client.orderbook.get_orderbook("BTCUSD-25JAN-100000", depth=5)
+```
+
+## Types
+
+### Orderbook
+
+```python
+class Orderbook(BaseModel):
+    market_id: str
+    bids: list[OrderbookLevel]
+    asks: list[OrderbookLevel]
+    timestamp: str | None
+```
+
+### OrderbookLevel
+
+```python
+class OrderbookLevel(BaseModel):
+    price: str
+    quantity: str
+```
+
+## Example: Display Orderbook
+
+```python
+def display_orderbook(orderbook: Orderbook):
+    print(f"Orderbook for {orderbook.market_id}")
+    print("-" * 40)
+    
+    print("ASKS (Sell Orders):")
+    for level in reversed(orderbook.asks[:5]):
+        print(f"  ${level.price} - {level.quantity} contracts")
+    
+    print("-" * 40)
+    
+    print("BIDS (Buy Orders):")
+    for level in orderbook.bids[:5]:
+        print(f"  ${level.price} - {level.quantity} contracts")
+
+# Usage
+orderbook = client.orderbook.get_orderbook("market-id")
+display_orderbook(orderbook)
+```
