@@ -1,0 +1,77 @@
+---
+title: Prediction Market API
+description: Initialize and manage prediction markets
+---
+
+# Prediction Market API
+
+The Prediction Market API provides methods to initialize and manage prediction markets on Solana.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+pm_api = client.prediction_market
+```
+
+## Methods
+
+### initialize_market
+
+Initialize a new prediction market (requires authorization).
+
+```python
+def initialize_market(
+    event_ticker: str,
+    market_ticker: str,
+    title: str,
+    description: str,
+    expiration_time: int,
+    user_public_key: str,
+    oracle_public_key: str | None = None
+) -> PredictionMarketInitResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `event_ticker` | `str` | Parent event ticker |
+| `market_ticker` | `str` | Unique market ticker |
+| `title` | `str` | Market title |
+| `description` | `str` | Market description |
+| `expiration_time` | `int` | Unix timestamp for expiration |
+| `user_public_key` | `str` | Creator's public key |
+| `oracle_public_key` | `str \| None` | Oracle for settlement |
+
+#### Example
+
+```python
+import time
+
+market = client.prediction_market.initialize_market(
+    event_ticker="CRYPTO-2025",
+    market_ticker="BTC-100K-JAN",
+    title="Will BTC reach $100K by January 2025?",
+    description="Resolves YES if Bitcoin reaches $100,000 USD",
+    expiration_time=int(time.time()) + 86400 * 30,  # 30 days
+    user_public_key=str(keypair.pubkey())
+)
+
+signature = sign_and_send_transaction(market.transaction, keypair)
+print(f"Market created: {market.market_address}")
+```
+
+## Types
+
+### PredictionMarketInitResponse
+
+```python
+class PredictionMarketInitResponse(BaseModel):
+    market_address: str
+    transaction: str  # Base64 encoded
+    yes_token_mint: str
+    no_token_mint: str
+```

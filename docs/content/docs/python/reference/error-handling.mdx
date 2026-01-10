@@ -1,0 +1,174 @@
+---
+title: Error Handling
+description: Handle errors and implement retry logic
+---
+
+# Error Handling
+
+The SDK provides error classes and utilities for robust error handling and retry logic.
+
+## DFlowApiError
+
+The main exception class for API errors.
+
+```python
+from dflow import DFlowApiError
+
+try:
+    market = client.markets.get_market("invalid-id")
+except DFlowApiError as e:
+    print(f"Error: {e.message}")
+    print(f"Status Code: {e.status_code}")
+    print(f"Response: {e.response}")
+```
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `message` | `str` | Error message |
+| `status_code` | `int \| None` | HTTP status code |
+| `response` | `dict \| None` | Full error response |
+
+## Common Error Codes
+
+| Status | Description |
+|--------|-------------|
+| `400` | Bad Request - Invalid parameters |
+| `401` | Unauthorized - Invalid or missing API key |
+| `403` | Forbidden - Insufficient permissions |
+| `404` | Not Found - Resource doesn't exist |
+| `429` | Rate Limited - Too many requests |
+| `500` | Server Error - Internal error |
+
+## Retry Logic
+
+### with_retry
+
+Wrap a function with automatic retry logic.
+
+```python
+from dflow import with_retry
+
+@with_retry(max_retries=3, delay=1.0)
+def fetch_market(market_id: str):
+    return client.markets.get_market(market_id)
+
+# Will retry up to 3 times on transient errors
+market = fetch_market("BTCUSD-25JAN-100000")
+```
+
+### with_retry_async
+
+Async version of with_retry.
+
+```python
+from dflow import with_retry_async
+
+@with_retry_async(max_retries=3, delay=1.0)
+async def fetch_market_async(market_id: str):
+    return client.markets.get_market(market_id)
+```
+
+### create_retryable
+
+Create a retryable wrapper for any function.
+
+```python
+from dflow import create_retryable
+
+retryable_get_market = create_retryable(
+    client.markets.get_market,
+    max_retries=3,
+    delay=1.0
+)
+
+market = retryable_get_market("BTCUSD-25JAN-100000")
+```
+
+### default_should_retry
+
+The default retry condition function.
+
+```python
+from dflow import default_should_retry
+
+def default_should_retry(error: Exception) -> bool:
+    """Returns True for retryable errors (429, 5xx, connection errors)"""
+    ...
+```
+
+### Custom Retry Logic
+
+```python
+from dflow import with_retry, DFlowApiError
+
+def custom_should_retry(error: Exception) -> bool:
+    if isinstance(error, DFlowApiError):
+        # Only retry on rate limits
+        return error.status_code == 429
+    return False
+
+@with_retry(max_retries=5, delay=2.0, should_retry=custom_should_retry)
+def fetch_with_custom_retry():
+    return client.markets.get_markets()
+```
+
+## Error Handling Patterns
+
+### Basic Error Handling
+
+```python
+from dflow import DFlowClient, DFlowApiError
+
+client = DFlowClient()
+
+try:
+    markets = client.markets.get_markets(status="active")
+except DFlowApiError as e:
+    if e.status_code == 429:
+        print("Rate limited, please wait...")
+    elif e.status_code == 401:
+        print("Invalid API key")
+    else:
+        print(f"API error: {e.message}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+### With Retry and Fallback
+
+```python
+from dflow import with_retry, DFlowApiError
+
+@with_retry(max_retries=3, delay=1.0)
+def get_market_safe(market_id: str):
+    return client.markets.get_market(market_id)
+
+def get_market_with_fallback(market_id: str):
+    try:
+        return get_market_safe(market_id)
+    except DFlowApiError as e:
+        print(f"Failed to fetch market: {e.message}")
+        return None
+```
+
+### Async Error Handling
+
+```python
+import asyncio
+from dflow import DFlowApiError, with_retry_async
+
+@with_retry_async(max_retries=3)
+async def fetch_markets_async():
+    # Async operations here
+    pass
+
+async def main():
+    try:
+        markets = await fetch_markets_async()
+    except DFlowApiError as e:
+        print(f"Error: {e.message}")
+
+asyncio.run(main())
+```

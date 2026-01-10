@@ -1,7 +1,7 @@
-import { source } from '@/lib/source';
+import { typescriptSource } from '@/lib/source';
 import type { InferPageType } from 'fumadocs-core/source';
 
-export async function getLLMText(page: InferPageType<typeof source>): Promise<string> {
+export async function getLLMText(page: InferPageType<typeof typescriptSource>): Promise<string> {
   // Get the raw MDX content from the page data
   const content = page.data.body;
 

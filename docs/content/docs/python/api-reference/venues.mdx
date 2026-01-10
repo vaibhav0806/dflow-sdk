@@ -1,0 +1,61 @@
+---
+title: Venues API
+description: Fetch venue information
+---
+
+# Venues API
+
+The Venues API provides methods to fetch information about trading venues.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+venues_api = client.venues
+```
+
+## Methods
+
+### get_venues
+
+Fetch all available venues.
+
+```python
+def get_venues() -> list[Venue]
+```
+
+### get_venue_keys
+
+Fetch venue public keys.
+
+```python
+def get_venue_keys() -> list[str]
+```
+
+#### Example
+
+```python
+# Get all venues
+venues = client.venues.get_venues()
+
+for venue in venues:
+    print(f"{venue.name}: {venue.public_key}")
+
+# Get venue keys
+keys = client.venues.get_venue_keys()
+print("Venue keys:", keys)
+```
+
+## Types
+
+### Venue
+
+```python
+class Venue(BaseModel):
+    name: str
+    public_key: str
+    description: str | None
+    supported_markets: list[str] | None
+```

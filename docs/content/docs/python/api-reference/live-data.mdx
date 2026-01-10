@@ -1,0 +1,88 @@
+---
+title: Live Data API
+description: Fetch live market data including candlesticks and forecasts
+---
+
+# Live Data API
+
+The Live Data API provides methods to fetch live market data including candlestick charts and forecast history.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+live_data_api = client.live_data
+```
+
+## Methods
+
+### get_candlesticks
+
+Fetch candlestick data for a market.
+
+```python
+def get_candlesticks(
+    market_id: str,
+    interval: str = "1h",
+    start_time: str | None = None,
+    end_time: str | None = None
+) -> list[Candlestick]
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market ticker |
+| `interval` | `str` | Candlestick interval: "1m", "5m", "15m", "1h", "4h", "1d" |
+| `start_time` | `str \| None` | Start time (ISO 8601) |
+| `end_time` | `str \| None` | End time (ISO 8601) |
+
+#### Example
+
+```python
+candles = client.live_data.get_candlesticks(
+    market_id="BTCUSD-25JAN-100000",
+    interval="1h"
+)
+
+for candle in candles[-5:]:
+    print(f"{candle.timestamp}: O={candle.open} H={candle.high} L={candle.low} C={candle.close}")
+```
+
+### get_forecast_history
+
+Fetch forecast history for a market.
+
+```python
+def get_forecast_history(
+    market_id: str,
+    cursor: str | None = None,
+    limit: int | None = None
+) -> list[ForecastHistory]
+```
+
+## Types
+
+### Candlestick
+
+```python
+class Candlestick(BaseModel):
+    timestamp: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: float
+```
+
+### ForecastHistory
+
+```python
+class ForecastHistory(BaseModel):
+    timestamp: str
+    yes_price: float
+    no_price: float
+```

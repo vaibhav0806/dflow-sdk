@@ -1,0 +1,130 @@
+---
+title: Swap API
+description: Execute token swaps on prediction markets
+---
+
+# Swap API
+
+The Swap API provides methods to get quotes and execute token swaps on prediction markets.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+swap_api = client.swap
+```
+
+## Methods
+
+### get_quote
+
+Get a quote for a swap without executing it.
+
+```python
+def get_quote(
+    market_id: str,
+    side: str,
+    size: float,
+    type: str,
+    slippage_bps: int | None = None
+) -> SwapQuote
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market to swap on |
+| `side` | `str` | "yes" or "no" |
+| `size` | `float` | Number of contracts |
+| `type` | `str` | "buy" or "sell" |
+| `slippage_bps` | `int \| None` | Slippage tolerance in basis points |
+
+#### Example
+
+```python
+quote = client.swap.get_quote(
+    market_id="BTCUSD-25JAN-100000",
+    side="yes",
+    size=100,
+    type="buy"
+)
+
+print(f"Average Price: ${quote.avg_price}")
+print(f"Total Cost: ${quote.total_cost}")
+print(f"Price Impact: {quote.price_impact}%")
+```
+
+### create_swap
+
+Create a swap transaction to be signed and submitted.
+
+```python
+def create_swap(
+    market_id: str,
+    side: str,
+    size: float,
+    type: str,
+    user_public_key: str,
+    slippage_bps: int | None = None
+) -> SwapResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market to swap on |
+| `side` | `str` | "yes" or "no" |
+| `size` | `float` | Number of contracts |
+| `type` | `str` | "buy" or "sell" |
+| `user_public_key` | `str` | User's Solana public key |
+| `slippage_bps` | `int \| None` | Slippage tolerance in basis points |
+
+#### Example
+
+```python
+from solders.keypair import Keypair
+from dflow import sign_and_send_transaction
+
+keypair = Keypair.from_base58_string("your-private-key")
+
+# Create swap transaction
+swap = client.swap.create_swap(
+    market_id="BTCUSD-25JAN-100000",
+    side="yes",
+    size=100,
+    type="buy",
+    user_public_key=str(keypair.pubkey())
+)
+
+# Sign and send
+signature = sign_and_send_transaction(swap.transaction, keypair)
+print(f"Transaction: {signature}")
+```
+
+## Types
+
+### SwapQuote
+
+```python
+class SwapQuote(BaseModel):
+    market_id: str
+    side: str
+    size: float
+    type: str
+    avg_price: float
+    total_cost: float
+    price_impact: float
+    fees: float
+```
+
+### SwapResponse
+
+```python
+class SwapResponse(BaseModel):
+    transaction: str  # Base64 encoded transaction
+    quote: SwapQuote
+```

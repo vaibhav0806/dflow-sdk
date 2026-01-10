@@ -1,0 +1,100 @@
+---
+title: Intent API
+description: Intent-based trading with JIT optimization
+---
+
+# Intent API
+
+The Intent API provides methods for intent-based trading with just-in-time (JIT) optimization and MEV protection.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+intent_api = client.intent
+```
+
+## Methods
+
+### create_intent
+
+Create a trading intent.
+
+```python
+def create_intent(
+    market_id: str,
+    side: str,
+    type: str,
+    size: float,
+    user_public_key: str,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    deadline: int | None = None
+) -> IntentResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `market_id` | `str` | The market to trade on |
+| `side` | `str` | "yes" or "no" |
+| `type` | `str` | "buy" or "sell" |
+| `size` | `float` | Number of contracts |
+| `user_public_key` | `str` | User's Solana public key |
+| `min_price` | `float \| None` | Minimum acceptable price |
+| `max_price` | `float \| None` | Maximum acceptable price |
+| `deadline` | `int \| None` | Unix timestamp deadline |
+
+#### Example
+
+```python
+intent = client.intent.create_intent(
+    market_id="BTCUSD-25JAN-100000",
+    side="yes",
+    type="buy",
+    size=100,
+    user_public_key=str(keypair.pubkey()),
+    max_price=0.70,
+    deadline=int(time.time()) + 300  # 5 minutes
+)
+
+# Sign and send
+signature = sign_and_send_transaction(intent.transaction, keypair)
+print(f"Intent submitted: {intent.intent_id}")
+```
+
+### get_intent_quote
+
+Get a quote for an intent without submitting.
+
+```python
+def get_intent_quote(
+    market_id: str,
+    side: str,
+    type: str,
+    size: float
+) -> IntentQuote
+```
+
+## Types
+
+### IntentResponse
+
+```python
+class IntentResponse(BaseModel):
+    intent_id: str
+    transaction: str  # Base64 encoded
+    quote: IntentQuote
+```
+
+### IntentQuote
+
+```python
+class IntentQuote(BaseModel):
+    estimated_price: float
+    estimated_slippage: float
+    mev_protection: bool
+```

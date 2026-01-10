@@ -1,0 +1,95 @@
+---
+title: Constants
+description: SDK constants and configuration values
+---
+
+# Constants
+
+The SDK exports various constants for API URLs, token mints, and default values.
+
+## API URLs
+
+### Development Environment
+
+```python
+from dflow import (
+    METADATA_API_BASE_URL,
+    TRADE_API_BASE_URL,
+    WEBSOCKET_URL
+)
+
+# Development URLs
+print(METADATA_API_BASE_URL)  # https://api-dev.dflow.net/metadata/
+print(TRADE_API_BASE_URL)     # https://api-dev.dflow.net/trade/
+print(WEBSOCKET_URL)          # wss://ws-dev.dflow.net
+```
+
+### Production Environment
+
+```python
+from dflow import (
+    PROD_METADATA_API_BASE_URL,
+    PROD_TRADE_API_BASE_URL,
+    PROD_WEBSOCKET_URL
+)
+
+# Production URLs
+print(PROD_METADATA_API_BASE_URL)  # https://api.dflow.net/metadata/
+print(PROD_TRADE_API_BASE_URL)     # https://api.dflow.net/trade/
+print(PROD_WEBSOCKET_URL)          # wss://ws.dflow.net
+```
+
+## Token Mints
+
+```python
+from dflow import USDC_MINT, SOL_MINT
+
+# Solana token mint addresses
+print(USDC_MINT)  # EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
+print(SOL_MINT)   # So11111111111111111111111111111111111111112
+```
+
+## Trading Defaults
+
+```python
+from dflow import DEFAULT_SLIPPAGE_BPS, OUTCOME_TOKEN_DECIMALS
+
+# Default slippage tolerance (100 = 1%)
+print(DEFAULT_SLIPPAGE_BPS)  # 100
+
+# Decimal places for outcome tokens
+print(OUTCOME_TOKEN_DECIMALS)  # 6
+```
+
+## API Limits
+
+```python
+from dflow import MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES
+
+# Maximum items per batch request
+print(MAX_BATCH_SIZE)  # 100
+
+# Maximum addresses in filter
+print(MAX_FILTER_ADDRESSES)  # 200
+```
+
+## Usage Example
+
+```python
+from dflow import (
+    DFlowClient,
+    USDC_MINT,
+    DEFAULT_SLIPPAGE_BPS
+)
+
+client = DFlowClient()
+
+# Use constants in API calls
+quote = client.swap.get_quote(
+    market_id="BTCUSD-25JAN-100000",
+    side="yes",
+    size=100,
+    type="buy",
+    slippage_bps=DEFAULT_SLIPPAGE_BPS
+)
+```

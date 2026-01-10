@@ -1,0 +1,58 @@
+---
+title: Python SDK
+description: Official Python SDK for DFlow on Solana - prediction markets and trading
+---
+
+# DFlow Python SDK
+
+The official Python SDK for interacting with [DFlow](https://pond.dflow.net) on Solana. Build prediction market applications, trading bots, and DeFi integrations with a clean, type-safe Python interface.
+
+## Features
+
+- **Market Discovery** - Browse events, markets, series, and orderbooks
+- **Trading** - Execute swaps, intents, and orders with smart routing
+- **Real-time Data** - WebSocket subscriptions for prices, trades, and orderbook updates
+- **Solana Integration** - Transaction signing, position tracking, and balance queries
+- **Type Safety** - Full type hints with Pydantic models
+- **Async Support** - Both sync and async APIs available
+
+## Quick Start
+
+```python
+from dflow import DFlowClient
+
+# Initialize the client
+client = DFlowClient()
+
+# Get active markets
+markets = client.markets.get_markets(status="active")
+
+# Get a specific market's orderbook
+orderbook = client.orderbook.get_orderbook(market_id="some-market-id")
+
+# Subscribe to real-time updates
+async with client.ws as ws:
+    await ws.subscribe_prices(["market-id-1", "market-id-2"])
+    async for price in ws.prices():
+        print(f"Price update: {price}")
+```
+
+## Installation
+
+```bash
+pip install dflow-sdk
+```
+
+Or with uv:
+
+```bash
+uv add dflow-sdk
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Installation" href="/docs/python/getting-started/installation" />
+  <Card title="Quickstart" href="/docs/python/getting-started/quickstart" />
+  <Card title="API Reference" href="/docs/python/api-reference/client" />
+</Cards>

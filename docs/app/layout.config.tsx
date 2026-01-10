@@ -51,8 +51,13 @@ export const baseOptions: BaseLayoutProps = {
   },
   links: [
     {
-      text: 'Documentation',
-      url: '/docs',
+      text: 'TypeScript',
+      url: '/docs/typescript',
+      active: 'nested-url',
+    },
+    {
+      text: 'Python',
+      url: '/docs/python',
       active: 'nested-url',
     },
     {

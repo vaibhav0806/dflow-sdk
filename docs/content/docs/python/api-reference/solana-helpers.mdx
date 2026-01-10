@@ -1,0 +1,200 @@
+---
+title: Solana Helpers
+description: Utilities for Solana transactions and positions
+---
+
+# Solana Helpers
+
+The SDK provides utility functions for working with Solana transactions, positions, and token balances.
+
+## Transaction Functions
+
+### sign_and_send_transaction
+
+Sign and send a transaction to the Solana network.
+
+```python
+from dflow import sign_and_send_transaction
+
+signature = sign_and_send_transaction(
+    transaction: str,  # Base64 encoded transaction
+    keypair: Keypair,
+    rpc_url: str | None = None
+) -> str
+```
+
+#### Example
+
+```python
+from solders.keypair import Keypair
+from dflow import sign_and_send_transaction
+
+keypair = Keypair.from_base58_string("your-private-key")
+
+# After getting a transaction from any API
+signature = sign_and_send_transaction(
+    swap_response.transaction,
+    keypair
+)
+print(f"Transaction sent: {signature}")
+```
+
+### sign_send_and_confirm
+
+Sign, send, and wait for transaction confirmation.
+
+```python
+from dflow import sign_send_and_confirm
+
+result = sign_send_and_confirm(
+    transaction: str,
+    keypair: Keypair,
+    rpc_url: str | None = None,
+    commitment: str = "confirmed"
+) -> TransactionConfirmation
+```
+
+### wait_for_confirmation
+
+Wait for a transaction to be confirmed.
+
+```python
+from dflow import wait_for_confirmation
+
+confirmation = wait_for_confirmation(
+    signature: str,
+    rpc_url: str | None = None,
+    commitment: str = "confirmed",
+    timeout: int = 30
+) -> TransactionConfirmation
+```
+
+### wait_for_confirmation_async
+
+Async version of wait_for_confirmation.
+
+```python
+from dflow import wait_for_confirmation_async
+
+confirmation = await wait_for_confirmation_async(
+    signature: str,
+    rpc_url: str | None = None,
+    commitment: str = "confirmed",
+    timeout: int = 30
+) -> TransactionConfirmation
+```
+
+## Position Functions
+
+### get_user_positions
+
+Get all prediction market positions for a user.
+
+```python
+from dflow import get_user_positions
+
+positions = get_user_positions(
+    user_public_key: str,
+    rpc_url: str | None = None
+) -> list[UserPosition]
+```
+
+#### Example
+
+```python
+from dflow import get_user_positions
+
+positions = get_user_positions(str(keypair.pubkey()))
+
+for pos in positions:
+    print(f"{pos.market_id}: {pos.side} {pos.size} @ avg ${pos.average_price}")
+```
+
+### get_token_balances
+
+Get token balances for a user.
+
+```python
+from dflow import get_token_balances
+
+balances = get_token_balances(
+    user_public_key: str,
+    token_mints: list[str] | None = None,
+    rpc_url: str | None = None
+) -> list[TokenBalance]
+```
+
+### is_redemption_eligible
+
+Check if a position is eligible for redemption.
+
+```python
+from dflow import is_redemption_eligible
+
+eligible = is_redemption_eligible(
+    market_id: str,
+    user_public_key: str
+) -> bool
+```
+
+### calculate_scalar_payout
+
+Calculate payout for a scalar market position.
+
+```python
+from dflow import calculate_scalar_payout
+
+payout = calculate_scalar_payout(
+    position_size: float,
+    entry_price: float,
+    settlement_value: float,
+    market_range: tuple[float, float]
+) -> float
+```
+
+## Types
+
+### TransactionConfirmation
+
+```python
+class TransactionConfirmation(BaseModel):
+    signature: str
+    slot: int
+    confirmation_status: str
+    err: dict | None
+```
+
+### UserPosition
+
+```python
+class UserPosition(BaseModel):
+    market_id: str
+    side: str  # "yes" or "no"
+    size: float
+    average_price: float
+    unrealized_pnl: float | None
+```
+
+### TokenBalance
+
+```python
+class TokenBalance(BaseModel):
+    mint: str
+    balance: float
+    decimals: int
+```
+
+## Priority Fees
+
+### PriorityFeeConfig
+
+Configure priority fees for transactions.
+
+```python
+from dflow import PriorityFeeConfig
+
+config = PriorityFeeConfig(
+    compute_unit_price: int = 1000,  # microlamports
+    compute_unit_limit: int = 200000
+)
+```
