@@ -11,6 +11,7 @@ from websockets import ClientConnection
 from dflow.types import OrderbookUpdate, PriceUpdate, TradeUpdate, WebSocketChannel
 from dflow.utils.constants import WEBSOCKET_URL
 
+
 class DFlowWebSocket:
     """WebSocket client for real-time price, trade, and orderbook updates.
 

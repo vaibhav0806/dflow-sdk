@@ -1,13 +1,60 @@
-import { join } from 'path';
-import { generateLLMDocs } from '@/lib/extract-mdx-content';
+import { typescriptSource } from '@/lib/source';
+import { cleanMdxContent } from '@/lib/mdx-utils';
 
 export const revalidate = false;
 
 const SITE_URL = 'https://dflow-sdk.vercel.app';
 
 export async function GET() {
-  const contentDir = join(process.cwd(), 'content/docs/typescript');
-  const fullDocs = generateLLMDocs(contentDir, 'TypeScript', `${SITE_URL}/docs/typescript`);
+  const pages = typescriptSource.getPages();
+  
+  // Sort pages logically
+  const sortOrder = ['index', 'installation', 'quickstart', 'client', 'events', 'markets'];
+  pages.sort((a, b) => {
+    const aIdx = sortOrder.findIndex(s => a.url.includes(s));
+    const bIdx = sortOrder.findIndex(s => b.url.includes(s));
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+    if (aIdx !== -1) return -1;
+    if (bIdx !== -1) return 1;
+    return a.url.localeCompare(b.url);
+  });
+
+  // Generate documentation content from each page
+  const sections: string[] = [];
+  
+  for (const page of pages) {
+    const title = page.data.title;
+    const description = page.data.description;
+    const url = `${SITE_URL}${page.url}`;
+    
+    // Get the raw content if available, otherwise use structured data
+    let content = '';
+    
+    // Try to get content from the page's structured data (TOC)
+    if (page.data.structuredData) {
+      const toc = page.data.structuredData;
+      if (toc.contents && Array.isArray(toc.contents)) {
+        content = toc.contents
+          .map((item: { heading?: string; content?: string }) => {
+            const parts = [];
+            if (item.heading) parts.push(`\n=== ${item.heading} ===\n`);
+            if (item.content) parts.push(cleanMdxContent(item.content));
+            return parts.join('');
+          })
+          .join('\n');
+      }
+    }
+    
+    // Build the section
+    sections.push(`
+################################################################################
+${title.toUpperCase()}
+################################################################################
+URL: ${url}
+${description ? `\nDescription: ${description}\n` : ''}
+${content || `See documentation at: ${url}`}
+`);
+  }
 
   const header = `################################################################################
 #                        DFLOW TYPESCRIPT SDK DOCUMENTATION                      #
@@ -23,16 +70,16 @@ RESOURCES:
 • NPM: https://www.npmjs.com/package/dflow-sdk
 
 INSTALLATION:
-[BASH CODE]
+[BASH]
 pnpm add dflow-sdk
 # or
 npm install dflow-sdk
 # or
 bun add dflow-sdk
-[END CODE]
+[END BASH]
 
 QUICK START:
-[TYPESCRIPT CODE]
+[TYPESCRIPT]
 import { DFlowClient } from 'dflow-sdk';
 
 const dflow = new DFlowClient();
@@ -44,13 +91,18 @@ const markets = await dflow.markets.getMarkets({ status: 'active' });
 await dflow.ws.connect();
 dflow.ws.subscribePrices(['market-ticker']);
 dflow.ws.onPrice((update) => console.log(update));
-[END CODE]
+[END TYPESCRIPT]
+
+################################################################################
+#                              TABLE OF CONTENTS                                #
+################################################################################
+
+${pages.map(p => `• ${p.data.title} - ${SITE_URL}${p.url}`).join('\n')}
 
 ################################################################################
 #                              FULL DOCUMENTATION                               #
 ################################################################################
-
-${fullDocs}
+${sections.join('\n')}
 
 ################################################################################
 #                              END OF DOCUMENTATION                             #
