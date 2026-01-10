@@ -1,5 +1,7 @@
 """Swap API for DFlow SDK."""
 
+from typing import Any
+
 from dflow.types import PriorityFeeConfig, SwapInstructionsResponse, SwapQuote, SwapResponse
 from dflow.utils.http import HttpClient
 
@@ -128,7 +130,7 @@ class SwapAPI:
         )
 
         # Build request body
-        body: dict = {
+        body: dict[str, Any] = {
             "quoteResponse": quote_response.model_dump(by_alias=True),
             "userPublicKey": user_public_key,
         }
@@ -177,7 +179,7 @@ class SwapAPI:
         )
 
         # Build request body
-        body: dict = {
+        body: dict[str, Any] = {
             "quoteResponse": quote_response.model_dump(by_alias=True),
             "userPublicKey": user_public_key,
         }

@@ -3,7 +3,7 @@
 import asyncio
 import json
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 import websockets
 from websockets import ClientConnection
@@ -91,7 +91,7 @@ class DFlowWebSocket:
             >>> await dflow.ws.connect()
             >>> print("Connected!", dflow.ws.is_connected)
         """
-        if self._ws is not None and not self._ws.closed:
+        if self._ws is not None and not cast(Any, self._ws).closed:
             return
 
         if self._is_connecting:
@@ -119,12 +119,12 @@ class DFlowWebSocket:
             async for message in self._ws:
                 self._handle_message(message)
         except websockets.ConnectionClosed:
-            for cb in self._close_callbacks:
-                cb()
+            for close_cb in self._close_callbacks:
+                close_cb()
             await self._attempt_reconnect()
         except Exception as e:
-            for cb in self._error_callbacks:
-                cb(e)
+            for error_cb in self._error_callbacks:
+                error_cb(e)
             await self._attempt_reconnect()
 
     def _handle_message(self, message: str | bytes) -> None:
@@ -137,20 +137,20 @@ class DFlowWebSocket:
             channel = data.get("channel")
 
             if channel == "prices":
-                update = PriceUpdate.model_validate(data)
-                for cb in self._price_callbacks:
-                    cb(update)
+                price_update = PriceUpdate.model_validate(data)
+                for price_cb in self._price_callbacks:
+                    price_cb(price_update)
             elif channel == "trades":
-                update = TradeUpdate.model_validate(data)
-                for cb in self._trade_callbacks:
-                    cb(update)
+                trade_update = TradeUpdate.model_validate(data)
+                for trade_cb in self._trade_callbacks:
+                    trade_cb(trade_update)
             elif channel == "orderbook":
-                update = OrderbookUpdate.model_validate(data)
-                for cb in self._orderbook_callbacks:
-                    cb(update)
+                orderbook_update = OrderbookUpdate.model_validate(data)
+                for orderbook_cb in self._orderbook_callbacks:
+                    orderbook_cb(orderbook_update)
         except Exception as e:
-            for cb in self._error_callbacks:
-                cb(e)
+            for error_cb in self._error_callbacks:
+                error_cb(e)
 
     async def _attempt_reconnect(self) -> None:
         """Attempt to reconnect to the WebSocket server."""
@@ -191,7 +191,7 @@ class DFlowWebSocket:
 
     async def _send(self, message: dict[str, Any]) -> None:
         """Send a message to the WebSocket server."""
-        if self._ws is None or self._ws.closed:
+        if self._ws is None or cast(Any, self._ws).closed:
             raise Exception("WebSocket is not connected")
         await self._ws.send(json.dumps(message))
 
@@ -399,4 +399,4 @@ class DFlowWebSocket:
             >>> if dflow.ws.is_connected:
             ...     await dflow.ws.subscribe_prices(["BTCD-25DEC0313-T92749.99"])
         """
-        return self._ws is not None and not self._ws.closed
+        return self._ws is not None and not cast(Any, self._ws).closed

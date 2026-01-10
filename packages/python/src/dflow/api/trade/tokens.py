@@ -1,5 +1,7 @@
 """Tokens API for DFlow SDK."""
 
+from typing import cast
+
 from dflow.utils.http import HttpClient
 
 
@@ -41,7 +43,7 @@ class TokensAPI:
             >>> print(f"Found {len(mints)} tokens")
         """
         data = self._http.get("/tokens")
-        return data
+        return cast(list[str], data)
 
     def get_tokens_with_decimals(self) -> list[TokenMintWithDecimals]:
         """Get all available tokens with decimal information.

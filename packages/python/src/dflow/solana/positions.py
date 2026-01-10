@@ -1,6 +1,7 @@
 """Position tracking utilities for DFlow SDK."""
 
 from solana.rpc.api import Client
+from solana.rpc.types import TokenAccountOpts
 from solders.pubkey import Pubkey
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
@@ -39,11 +40,11 @@ def get_token_balances(
     # Query both Token Program and Token-2022 Program
     token_accounts = connection.get_token_accounts_by_owner(
         wallet_address,
-        {"programId": TOKEN_PROGRAM_ID},
+        TokenAccountOpts(program_id=TOKEN_PROGRAM_ID),
     )
     token_2022_accounts = connection.get_token_accounts_by_owner(
         wallet_address,
-        {"programId": TOKEN_2022_PROGRAM_ID},
+        TokenAccountOpts(program_id=TOKEN_2022_PROGRAM_ID),
     )
 
     all_accounts = list(token_accounts.value) + list(token_2022_accounts.value)
@@ -120,15 +121,15 @@ def get_user_positions(
 
     # Build lookup map
     markets_by_mint: dict[str, Market] = {}
-    for market in markets:
-        for account in market.accounts.values():
-            markets_by_mint[account.yes_mint] = market
-            markets_by_mint[account.no_mint] = market
-            markets_by_mint[account.market_ledger] = market
+    for m in markets:
+        for account in m.accounts.values():
+            markets_by_mint[account.yes_mint] = m
+            markets_by_mint[account.no_mint] = m
+            markets_by_mint[account.market_ledger] = m
 
     positions = []
     for token in outcome_tokens:
-        market = markets_by_mint.get(token.mint)
+        market: Market | None = markets_by_mint.get(token.mint)
 
         if not market:
             positions.append(

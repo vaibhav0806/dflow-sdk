@@ -1,5 +1,7 @@
 """Tags API for DFlow SDK."""
 
+from typing import cast
+
 from dflow.types import CategoryTags
 from dflow.utils.http import HttpClient
 
@@ -31,4 +33,4 @@ class TagsAPI:
             >>> for category, tag_list in tags.items():
             ...     print(f"{category}: {', '.join(tag_list)}")
         """
-        return self._http.get("/tags_by_categories")
+        return cast(CategoryTags, self._http.get("/tags_by_categories"))

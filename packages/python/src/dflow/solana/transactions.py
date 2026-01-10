@@ -7,6 +7,7 @@ from typing import Literal
 
 from solana.rpc.api import Client
 from solders.keypair import Keypair
+from solders.signature import Signature
 from solders.transaction import VersionedTransaction
 
 from dflow.types import TransactionConfirmation
@@ -49,10 +50,11 @@ def sign_and_send_transaction(
     transaction = VersionedTransaction.from_bytes(transaction_buffer)
 
     # Sign with keypair
-    transaction.sign([signer])
+    # VersionedTransaction in solders is immutable, so we create a new one with the signer
+    signed_transaction = VersionedTransaction(transaction.message, [signer])
 
     # Send transaction
-    result = connection.send_transaction(transaction)
+    result = connection.send_transaction(signed_transaction)
 
     return str(result.value)
 
@@ -89,7 +91,7 @@ def wait_for_confirmation(
     start_time = time.time()
 
     while (time.time() - start_time) * 1000 < timeout_ms:
-        response = connection.get_signature_statuses([signature])
+        response = connection.get_signature_statuses([Signature.from_string(signature)])
         status = response.value[0] if response.value else None
 
         if status:
@@ -189,7 +191,7 @@ async def wait_for_confirmation_async(
     start_time = time.time()
 
     while (time.time() - start_time) * 1000 < timeout_ms:
-        response = connection.get_signature_statuses([signature])
+        response = connection.get_signature_statuses([Signature.from_string(signature)])
         status = response.value[0] if response.value else None
 
         if status:

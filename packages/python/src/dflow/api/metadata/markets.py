@@ -1,5 +1,7 @@
 """Markets API for DFlow SDK."""
 
+from typing import cast
+
 from dflow.types import Candlestick, Market, MarketsResponse
 from dflow.utils.constants import MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES
 from dflow.utils.http import HttpClient
@@ -153,7 +155,7 @@ class MarketsAPI:
             >>> print(f"Total outcome tokens: {len(all_mints)}")
         """
         data = self._http.get("/outcome_mints")
-        return data.get("mints", [])
+        return cast(list[str], data.get("mints", []))
 
     def filter_outcome_mints(self, addresses: list[str]) -> list[str]:
         """Filter a list of addresses to find which are outcome token mints.
@@ -180,7 +182,7 @@ class MarketsAPI:
             )
 
         data = self._http.post("/filter_outcome_mints", {"addresses": addresses})
-        return data.get("outcomeMints", [])
+        return cast(list[str], data.get("outcomeMints", []))
 
     def get_market_candlesticks(self, ticker: str) -> list[Candlestick]:
         """Get OHLCV candlestick data for a market.

@@ -1,6 +1,6 @@
 """Main DFlow client for Python SDK."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from dflow.api.metadata import (
     EventsAPI,
@@ -172,5 +172,5 @@ class DFlowClient:
     def __enter__(self) -> "DFlowClient":
         return self
 
-    def __exit__(self, *args) -> None:
+    def __exit__(self, *args: Any) -> None:
         self.close()

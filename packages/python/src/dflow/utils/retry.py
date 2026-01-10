@@ -3,7 +3,7 @@
 import asyncio
 import random
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
+from typing import Any, TypeVar
 
 from .http import DFlowApiError
 
@@ -209,7 +209,7 @@ def create_retryable(
         A wrapped function with automatic retry
     """
 
-    def wrapper(*args, **kwargs) -> T:
+    def wrapper(*args: Any, **kwargs: Any) -> T:
         return with_retry(
             lambda: fn(*args, **kwargs),
             max_retries=max_retries,

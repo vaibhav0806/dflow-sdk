@@ -1,5 +1,7 @@
 """Venues API for DFlow SDK."""
 
+from typing import cast
+
 from dflow.utils.http import HttpClient
 
 
@@ -30,4 +32,4 @@ class VenuesAPI:
             >>> print(venues)  # ['Whirlpools', 'Raydium AMM', ...]
         """
         data = self._http.get("/venues")
-        return data
+        return cast(list[str], data)

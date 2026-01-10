@@ -1,6 +1,6 @@
 """Intent API for DFlow SDK."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from dflow.types import IntentQuote, IntentResponse, PriorityFeeConfig
 from dflow.utils.http import HttpClient
@@ -141,7 +141,7 @@ class IntentAPI:
         )
 
         # Build request body
-        body: dict = {
+        body: dict[str, Any] = {
             "quoteResponse": quote_response.model_dump(by_alias=True),
             "userPublicKey": user_public_key,
         }
