@@ -1,0 +1,80 @@
+---
+title: LLMs.txt
+description: Machine-readable documentation for AI assistants and LLMs
+---
+
+# LLMs.txt
+
+The DFlow Python SDK documentation is available in a machine-readable format optimized for Large Language Models (LLMs) and AI assistants.
+
+## What is LLMs.txt?
+
+LLMs.txt is a standardized format for providing documentation to AI assistants. It allows tools like ChatGPT, Claude, Cursor, and other AI-powered development tools to better understand and assist with your DFlow SDK usage.
+
+## Access the Documentation
+
+The Python SDK documentation is available at:
+
+```
+https://dflow-sdk.vercel.app/docs/python/llms.txt
+```
+
+You can also access it locally when running the docs:
+
+```
+http://localhost:3000/docs/python/llms.txt
+```
+
+## Usage with AI Assistants
+
+### With Cursor
+
+In Cursor, you can add the llms.txt URL as a documentation source:
+
+1. Open Cursor Settings
+2. Navigate to "Features" → "Docs"
+3. Add `https://dflow-sdk.vercel.app/docs/python/llms.txt` as a documentation source
+
+### With ChatGPT / Claude
+
+You can paste the llms.txt content directly into your conversation or reference the URL:
+
+```
+Please read the DFlow Python SDK documentation from:
+https://dflow-sdk.vercel.app/docs/python/llms.txt
+
+Then help me with [your question]
+```
+
+### With Custom AI Tools
+
+If you're building AI-powered tools, you can fetch the documentation programmatically:
+
+```python
+import httpx
+
+response = httpx.get('https://dflow-sdk.vercel.app/docs/python/llms.txt')
+docs = response.text
+
+# Use docs in your AI context
+```
+
+## Content Structure
+
+The llms.txt file includes:
+
+- **SDK Overview** — Introduction and installation instructions
+- **Table of Contents** — All available documentation pages
+- **Full Documentation** — Complete reference for all APIs
+
+## Benefits
+
+- **Better AI Assistance** — AI tools can provide more accurate code suggestions
+- **Faster Development** — Get context-aware help without leaving your IDE
+- **Always Up-to-Date** — The documentation is generated from the same source as the website
+
+## Related Resources
+
+- [DFlow Python SDK Documentation](/docs/python)
+- [API Reference](/docs/python/api-reference/client)
+- [GitHub Repository](https://github.com/vaibhav0806/dflow-sdk)

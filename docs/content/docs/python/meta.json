@@ -28,6 +28,7 @@
     "api-reference/solana-helpers",
     "---Reference---",
     "reference/constants",
-    "reference/error-handling"
+    "reference/error-handling",
+    "reference/llms-txt"
   ]
 }
