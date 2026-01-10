@@ -35,34 +35,34 @@ class Market(BaseModel):
     market_type: MarketType | None = Field(default=None, alias="marketType")
     status: MarketStatus
     result: MarketResult
-    
+
     # Price fields - API returns bid/ask as strings like "0.3500"
     yes_bid: str | None = Field(default=None, alias="yesBid")
     yes_ask: str | None = Field(default=None, alias="yesAsk")
     no_bid: str | None = Field(default=None, alias="noBid")
     no_ask: str | None = Field(default=None, alias="noAsk")
-    
+
     # Subtitles
     yes_sub_title: str | None = Field(default=None, alias="yesSubTitle")
     no_sub_title: str | None = Field(default=None, alias="noSubTitle")
-    
+
     # Volume and interest
     volume: float | None = None
     volume_24h: float | None = Field(default=None, alias="volume24h")
     open_interest: float | None = Field(default=None, alias="openInterest")
     liquidity: float | None = None
-    
+
     # Timestamps
     open_time: str | int | None = Field(default=None, alias="openTime")
     close_time: str | int | None = Field(default=None, alias="closeTime")
     expiration_time: str | int | None = Field(default=None, alias="expirationTime")
-    
+
     # Rules
     rules_primary: str | None = Field(default=None, alias="rulesPrimary")
     rules_secondary: str | None = Field(default=None, alias="rulesSecondary")
     can_close_early: bool | None = Field(default=None, alias="canCloseEarly")
     early_close_condition: str | None = Field(default=None, alias="earlyCloseCondition")
-    
+
     # Accounts
     accounts: dict[str, MarketAccount]
 

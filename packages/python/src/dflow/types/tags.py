@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-
 # CategoryTags is a dict mapping category names to lists of tag strings
 CategoryTags = dict[str, list[str]]
 

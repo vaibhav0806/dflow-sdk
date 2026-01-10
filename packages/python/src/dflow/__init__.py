@@ -23,8 +23,6 @@ Example:
     >>> print(f"You'll receive: {quote.out_amount} tokens")
 """
 
-from dflow.client import DFlowClient, DFlowEnvironment
-
 # API classes
 from dflow.api import (
     EventsAPI,
@@ -43,6 +41,7 @@ from dflow.api import (
     TradesAPI,
     VenuesAPI,
 )
+from dflow.client import DFlowClient, DFlowEnvironment
 
 # Solana utilities
 from dflow.solana import (
@@ -54,36 +53,6 @@ from dflow.solana import (
     sign_send_and_confirm,
     wait_for_confirmation,
     wait_for_confirmation_async,
-)
-
-# WebSocket
-from dflow.websocket import DFlowWebSocket
-
-# Utilities
-from dflow.utils import (
-    DEFAULT_SLIPPAGE_BPS,
-    MAX_BATCH_SIZE,
-    MAX_FILTER_ADDRESSES,
-    METADATA_API_BASE_URL,
-    OUTCOME_TOKEN_DECIMALS,
-    PROD_METADATA_API_BASE_URL,
-    PROD_TRADE_API_BASE_URL,
-    PROD_WEBSOCKET_URL,
-    SOL_MINT,
-    TRADE_API_BASE_URL,
-    USDC_MINT,
-    WEBSOCKET_URL,
-    DFlowApiError,
-    HttpClient,
-    collect_all,
-    count_all,
-    create_retryable,
-    default_should_retry,
-    find_first,
-    paginate,
-    paginate_async,
-    with_retry,
-    with_retry_async,
 )
 
 # Types - export the most commonly used ones
@@ -115,15 +84,45 @@ from dflow.types import (
     TokenBalance,
     TokenWithDecimals,
     Trade,
-    TradeUpdate,
     TradesResponse,
+    TradeUpdate,
     TransactionConfirmation,
     UserPosition,
     Venue,
     WebSocketOptions,
 )
 
-__version__ = "0.1.0"
+# Utilities
+from dflow.utils import (
+    DEFAULT_SLIPPAGE_BPS,
+    MAX_BATCH_SIZE,
+    MAX_FILTER_ADDRESSES,
+    METADATA_API_BASE_URL,
+    OUTCOME_TOKEN_DECIMALS,
+    PROD_METADATA_API_BASE_URL,
+    PROD_TRADE_API_BASE_URL,
+    PROD_WEBSOCKET_URL,
+    SOL_MINT,
+    TRADE_API_BASE_URL,
+    USDC_MINT,
+    WEBSOCKET_URL,
+    DFlowApiError,
+    HttpClient,
+    collect_all,
+    count_all,
+    create_retryable,
+    default_should_retry,
+    find_first,
+    paginate,
+    paginate_async,
+    with_retry,
+    with_retry_async,
+)
+
+# WebSocket
+from dflow.websocket import DFlowWebSocket
+
+__version__ = "0.1.4"
 
 __all__ = [
     # Main client
