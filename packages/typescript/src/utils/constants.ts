@@ -8,17 +8,26 @@
  */
 export const METADATA_API_BASE_URL = 'https://dev-prediction-markets-api.dflow.net/api/v1';
 
+/** @deprecated Use METADATA_API_BASE_URL instead */
+export const DEV_METADATA_API_BASE_URL = METADATA_API_BASE_URL;
+
 /**
  * Default trade API base URL (development environment).
  * No API key required. For testing with real capital against Kalshi.
  */
 export const TRADE_API_BASE_URL = 'https://dev-quote-api.dflow.net';
 
+/** @deprecated Use TRADE_API_BASE_URL instead */
+export const DEV_TRADE_API_BASE_URL = TRADE_API_BASE_URL;
+
 /**
  * Default WebSocket URL (development environment).
  * No API key required.
  */
 export const WEBSOCKET_URL = 'wss://dev-prediction-markets-api.dflow.net/api/v1/ws';
+
+/** @deprecated Use WEBSOCKET_URL instead */
+export const DEV_WEBSOCKET_URL = WEBSOCKET_URL;
 
 /**
  * Production metadata API base URL.

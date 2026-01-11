@@ -5,9 +5,11 @@ import type {
   MarketsResponse,
   MarketsBatchParams,
   MarketsBatchResponse,
+  OutcomeMintsParams,
   FilterOutcomeMintsParams,
   FilterOutcomeMintsResponse,
   Candlestick,
+  CandlestickParams,
 } from '../../types/index.js';
 import { MAX_BATCH_SIZE, MAX_FILTER_ADDRESSES } from '../../utils/constants.js';
 
@@ -60,7 +62,7 @@ export class MarketsAPI {
    * Useful when you have a mint address from a wallet or transaction
    * and need to look up the associated market.
    *
-   * @param mintAddress - The Solana mint address of a YES or NO token
+   * @param mintAddress - The Solana mint address (ledger or outcome mint)
    * @returns The market associated with the mint address
    *
    * @example
@@ -77,19 +79,23 @@ export class MarketsAPI {
    *
    * @param params - Optional filter parameters
    * @param params.status - Filter by market status ('active', 'closed', etc.)
-   * @param params.eventTicker - Filter by parent event ticker
+   * @param params.isInitialized - Filter markets that are initialized
+   * @param params.sort - Sort field (volume, volume24h, liquidity, openInterest, startDate)
    * @param params.limit - Maximum number of markets to return
-   * @param params.cursor - Pagination cursor from previous response
+   * @param params.cursor - Pagination cursor (number of markets to skip)
    * @returns Paginated list of markets
    *
    * @example
    * ```typescript
-   * // Get all active markets
-   * const { markets, cursor } = await dflow.markets.getMarkets({ status: 'active' });
+   * // Get all active markets sorted by volume
+   * const { markets, cursor } = await dflow.markets.getMarkets({
+   *   status: 'active',
+   *   sort: 'volume',
+   * });
    *
-   * // Get markets for a specific event
-   * const eventMarkets = await dflow.markets.getMarkets({
-   *   eventTicker: 'BTCD-25DEC0313',
+   * // Get initialized markets only
+   * const initialized = await dflow.markets.getMarkets({
+   *   isInitialized: true,
    * });
    *
    * // Paginate through results
@@ -104,7 +110,7 @@ export class MarketsAPI {
    * Batch query multiple markets by tickers and/or mint addresses.
    *
    * More efficient than multiple individual requests when you need
-   * data for several markets at once.
+   * data for several markets at once. Results are capped at 100 markets maximum.
    *
    * @param params - Batch query parameters
    * @param params.tickers - Array of market tickers to fetch
@@ -133,19 +139,28 @@ export class MarketsAPI {
   /**
    * Get all outcome token mint addresses.
    *
-   * Returns a list of all valid outcome token mints across all markets.
+   * Returns a flat list of all yes_mint and no_mint pubkeys from all supported markets.
    * Useful for filtering wallet tokens to find prediction market positions.
    *
+   * @param params - Optional filter parameters
+   * @param params.minCloseTs - Minimum close timestamp (Unix timestamp in seconds).
+   *                            Only markets with close_time >= minCloseTs will be included.
    * @returns Array of mint addresses
    *
    * @example
    * ```typescript
+   * // Get all outcome mints
    * const allMints = await dflow.markets.getOutcomeMints();
    * console.log(`Total outcome tokens: ${allMints.length}`);
+   *
+   * // Get outcome mints for markets closing after a specific date
+   * const futureMints = await dflow.markets.getOutcomeMints({
+   *   minCloseTs: Math.floor(Date.now() / 1000),  // Only markets not yet closed
+   * });
    * ```
    */
-  async getOutcomeMints(): Promise<string[]> {
-    const response = await this.http.get<{ mints: string[] }>('/outcome_mints');
+  async getOutcomeMints(params?: OutcomeMintsParams): Promise<string[]> {
+    const response = await this.http.get<{ mints: string[] }>('/outcome_mints', params);
     return response.mints;
   }
 
@@ -153,9 +168,9 @@ export class MarketsAPI {
    * Filter a list of addresses to find which are outcome token mints.
    *
    * Given a list of token addresses (e.g., from a wallet), returns only
-   * those that are prediction market outcome tokens.
+   * those that are prediction market outcome tokens (yes_mint or no_mint).
    *
-   * @param addresses - Array of Solana token addresses to check
+   * @param addresses - Array of Solana token addresses to check (max 200)
    * @returns Array of addresses that are outcome token mints
    * @throws Error if addresses exceed {@link MAX_FILTER_ADDRESSES} (200)
    *
@@ -184,22 +199,35 @@ export class MarketsAPI {
   /**
    * Get OHLCV candlestick data for a market.
    *
-   * Returns price history in candlestick format for charting.
+   * Relays market candlesticks from the Kalshi API. Automatically resolves
+   * the series_ticker from the market ticker.
    *
    * @param ticker - The market ticker
+   * @param params - Required candlestick parameters
+   * @param params.startTs - Start timestamp (Unix timestamp in seconds)
+   * @param params.endTs - End timestamp (Unix timestamp in seconds)
+   * @param params.periodInterval - Time period length of each candlestick in minutes (1, 60, or 1440)
    * @returns Array of candlestick data points
    *
    * @example
    * ```typescript
-   * const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749.99');
+   * const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749.99', {
+   *   startTs: 1704067200,    // Jan 1, 2024
+   *   endTs: 1704153600,      // Jan 2, 2024
+   *   periodInterval: 60,     // 1 hour candles
+   * });
    * candles.forEach(c => {
    *   console.log(`${c.timestamp}: O=${c.open} H=${c.high} L=${c.low} C=${c.close}`);
    * });
    * ```
    */
-  async getMarketCandlesticks(ticker: string): Promise<Candlestick[]> {
+  async getMarketCandlesticks(
+    ticker: string,
+    params: CandlestickParams
+  ): Promise<Candlestick[]> {
     const response = await this.http.get<{ candlesticks: Candlestick[] }>(
-      `/market/${ticker}/candlesticks`
+      `/market/${ticker}/candlesticks`,
+      params
     );
     return response.candlesticks;
   }
@@ -207,19 +235,32 @@ export class MarketsAPI {
   /**
    * Get OHLCV candlestick data for a market by mint address.
    *
-   * Alternative to {@link getMarketCandlesticks} when you have the mint address.
+   * Looks up the market ticker from a mint address, then fetches market candlesticks.
+   * Automatically resolves the series_ticker.
    *
-   * @param mintAddress - The Solana mint address of the market's outcome token
+   * @param mintAddress - The Solana mint address (ledger or outcome mint)
+   * @param params - Required candlestick parameters
+   * @param params.startTs - Start timestamp (Unix timestamp in seconds)
+   * @param params.endTs - End timestamp (Unix timestamp in seconds)
+   * @param params.periodInterval - Time period length of each candlestick in minutes (1, 60, or 1440)
    * @returns Array of candlestick data points
    *
    * @example
    * ```typescript
-   * const candles = await dflow.markets.getMarketCandlesticksByMint('EPjFWdd5...');
+   * const candles = await dflow.markets.getMarketCandlesticksByMint('EPjFWdd5...', {
+   *   startTs: 1704067200,
+   *   endTs: 1704153600,
+   *   periodInterval: 1440,  // Daily candles
+   * });
    * ```
    */
-  async getMarketCandlesticksByMint(mintAddress: string): Promise<Candlestick[]> {
+  async getMarketCandlesticksByMint(
+    mintAddress: string,
+    params: CandlestickParams
+  ): Promise<Candlestick[]> {
     const response = await this.http.get<{ candlesticks: Candlestick[] }>(
-      `/market/by-mint/${mintAddress}/candlesticks`
+      `/market/by-mint/${mintAddress}/candlesticks`,
+      params
     );
     return response.candlesticks;
   }

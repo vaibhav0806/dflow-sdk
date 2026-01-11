@@ -289,6 +289,10 @@ async function phase2MetadataAPIs(): Promise<boolean> {
     const response = await state.dflow.trades.getTrades({ limit: 5 });
     assertArray(response.trades, 'Trades');
     runner.log(`Found ${response.trades.length} recent trades`);
+    if (response.trades.length > 0) {
+      const trade = response.trades[0];
+      runner.log(`Sample trade: ${trade.tradeId} - ${trade.ticker} (${trade.takerSide})`);
+    }
     return response;
   });
 

@@ -1,18 +1,20 @@
 import type { HttpClient } from '../../utils/http.js';
-import type { SportsFilters } from '../../types/index.js';
+import type { FiltersBySportsResponse } from '../../types/index.js';
 
 /**
  * API for retrieving sports-specific filters.
  *
- * Get available filters for sports-related prediction markets
- * (leagues, teams, event types, etc.).
+ * Get available filters for sports-related prediction markets,
+ * including scopes and competitions for each sport.
  *
  * @example
  * ```typescript
  * const dflow = new DFlowClient();
  *
- * const filters = await dflow.sports.getFiltersBySports();
- * console.log(filters.leagues);
+ * const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
+ * sportOrdering.forEach(sport => {
+ *   console.log(`${sport}: ${filtersBySports[sport]?.competitions?.join(', ')}`);
+ * });
  * ```
  */
 export class SportsAPI {
@@ -21,15 +23,24 @@ export class SportsAPI {
   /**
    * Get all available sports filters.
    *
-   * @returns Sports filters including leagues, teams, and event types
+   * Returns filtering options available for each sport, including scopes and competitions.
+   *
+   * @returns Sports filters organized by sport with ordering
    *
    * @example
    * ```typescript
-   * const filters = await dflow.sports.getFiltersBySports();
-   * filters.leagues.forEach(league => console.log(league.name));
+   * const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
+   *
+   * // Iterate in order
+   * sportOrdering.forEach(sport => {
+   *   const filters = filtersBySports[sport];
+   *   console.log(`${sport}:`);
+   *   console.log(`  Competitions: ${filters?.competitions?.join(', ')}`);
+   *   console.log(`  Scopes: ${filters?.scopes?.join(', ')}`);
+   * });
    * ```
    */
-  async getFiltersBySports(): Promise<SportsFilters> {
-    return this.http.get<SportsFilters>('/filters_by_sports');
+  async getFiltersBySports(): Promise<FiltersBySportsResponse> {
+    return this.http.get<FiltersBySportsResponse>('/filters_by_sports');
   }
 }

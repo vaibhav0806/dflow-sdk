@@ -1,5 +1,5 @@
 import type { HttpClient } from '../../utils/http.js';
-import type { CategoryTags } from '../../types/index.js';
+import type { CategoryTags, TagsByCategoriesResponse } from '../../types/index.js';
 
 /**
  * API for retrieving category tags.
@@ -12,7 +12,7 @@ import type { CategoryTags } from '../../types/index.js';
  * const dflow = new DFlowClient();
  *
  * const tags = await dflow.tags.getTagsByCategories();
- * console.log(tags.categories);
+ * console.log(Object.keys(tags)); // List of categories
  * ```
  */
 export class TagsAPI {
@@ -20,6 +20,8 @@ export class TagsAPI {
 
   /**
    * Get all tags organized by category.
+   *
+   * Returns a mapping of series categories to their associated tags.
    *
    * @returns Tags grouped by their categories
    *
@@ -32,6 +34,7 @@ export class TagsAPI {
    * ```
    */
   async getTagsByCategories(): Promise<CategoryTags> {
-    return this.http.get<CategoryTags>('/tags_by_categories');
+    const response = await this.http.get<TagsByCategoriesResponse>('/tags_by_categories');
+    return response.tagsByCategories;
   }
 }

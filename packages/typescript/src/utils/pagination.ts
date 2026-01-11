@@ -5,7 +5,7 @@ import type { PaginationParams } from '../types/common.js';
  * Supports both `data` field and custom field names like `markets`, `events`, etc.
  */
 export interface PaginatedResult<T> {
-  cursor?: string;
+  cursor?: number | null;
   items: T[];
 }
 
@@ -20,7 +20,7 @@ export interface PaginateOptions<TResponse, TItem> {
    */
   getItems: (response: TResponse) => TItem[];
   /** Function to extract cursor from response (default: response.cursor) */
-  getCursor?: (response: TResponse) => string | undefined;
+  getCursor?: (response: TResponse) => number | null | undefined;
 }
 
 /**
@@ -51,13 +51,13 @@ export interface PaginateOptions<TResponse, TItem> {
  * @param options - Pagination options including item extractor
  * @yields Individual items from each page
  */
-export async function* paginate<TResponse extends { cursor?: string }, TItem>(
+export async function* paginate<TResponse extends { cursor?: number | null }, TItem>(
   fetchPage: (params: PaginationParams) => Promise<TResponse>,
   options: PaginateOptions<TResponse, TItem>
 ): AsyncGenerator<TItem, void, undefined> {
   const { maxItems, pageSize, getItems, getCursor = (r) => r.cursor } = options;
 
-  let cursor: string | undefined;
+  let cursor: number | undefined;
   let itemsYielded = 0;
 
   do {
@@ -76,8 +76,9 @@ export async function* paginate<TResponse extends { cursor?: string }, TItem>(
       }
     }
 
-    cursor = getCursor(response);
-  } while (cursor);
+    const nextCursor = getCursor(response);
+    cursor = nextCursor ?? undefined;
+  } while (cursor !== undefined);
 }
 
 /**
@@ -106,7 +107,7 @@ export async function* paginate<TResponse extends { cursor?: string }, TItem>(
  * @param options - Pagination options including item extractor
  * @returns Array of all items
  */
-export async function collectAll<TResponse extends { cursor?: string }, TItem>(
+export async function collectAll<TResponse extends { cursor?: number | null }, TItem>(
   fetchPage: (params: PaginationParams) => Promise<TResponse>,
   options: PaginateOptions<TResponse, TItem>
 ): Promise<TItem[]> {
@@ -138,7 +139,7 @@ export async function collectAll<TResponse extends { cursor?: string }, TItem>(
  * @param options - Pagination options including item extractor
  * @returns Total count of items
  */
-export async function countAll<TResponse extends { cursor?: string }, TItem>(
+export async function countAll<TResponse extends { cursor?: number | null }, TItem>(
   fetchPage: (params: PaginationParams) => Promise<TResponse>,
   options: PaginateOptions<TResponse, TItem>
 ): Promise<number> {
@@ -175,7 +176,7 @@ export async function countAll<TResponse extends { cursor?: string }, TItem>(
  * @param predicate - Function to test each item
  * @returns The first matching item, or undefined if not found
  */
-export async function findFirst<TResponse extends { cursor?: string }, TItem>(
+export async function findFirst<TResponse extends { cursor?: number | null }, TItem>(
   fetchPage: (params: PaginationParams) => Promise<TResponse>,
   options: PaginateOptions<TResponse, TItem>,
   predicate: (item: TItem) => boolean
