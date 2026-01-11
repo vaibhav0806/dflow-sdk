@@ -107,10 +107,12 @@ const swap = await dflow.swap.createSwap({
 
 ```typescript
 interface SwapResponse {
-  transaction: string; // Base64 encoded transaction
-  inAmount: string;
-  outAmount: string;
-  priceImpactPct: number;
+  swapTransaction: string; // Base64 encoded transaction
+  lastValidBlockHeight?: number;
+  prioritizationFeeLamports?: number;
+  computeUnitLimit?: number;
+  prioritizationType?: string;
+  quote?: SwapQuote;
 }
 ```
 
@@ -176,7 +178,7 @@ const swap = await dflow.swap.createSwap({
   userPublicKey: keypair.publicKey.toBase58(),
 });
 
-const result = await signSendAndConfirm(connection, swap.transaction, keypair);
+const result = await signSendAndConfirm(connection, swap.swapTransaction, keypair);
 console.log(`Swap executed: ${result.signature}`);
 ```
 

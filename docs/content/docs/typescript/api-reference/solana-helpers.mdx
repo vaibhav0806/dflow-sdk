@@ -92,12 +92,16 @@ interface TransactionConfirmation {
 
 ### getTokenBalances
 
-Get all TOKEN_2022 token balances for a wallet.
+Get all token balances for a wallet. Queries both the standard Token Program and Token-2022 Program.
 
 ```typescript
+import { Connection, PublicKey } from '@solana/web3.js';
 import { getTokenBalances } from 'dflow-sdk';
 
-const balances = await getTokenBalances(connection, walletPublicKey);
+const connection = new Connection('https://api.mainnet-beta.solana.com');
+const wallet = new PublicKey('...');
+
+const balances = await getTokenBalances(connection, wallet);
 
 for (const token of balances) {
   console.log(`Mint: ${token.mint}`);
@@ -118,7 +122,7 @@ interface TokenBalance {
 ```
 
 <Callout type="info">
-  This function specifically queries TOKEN_2022 program tokens, which is what DFlow uses for outcome tokens.
+  This function queries both the standard Token Program and Token-2022 Program to find all token holdings. It returns only tokens with non-zero balances.
 </Callout>
 
 ---

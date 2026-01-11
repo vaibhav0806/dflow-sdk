@@ -15,7 +15,16 @@ The `DFlowClient` is the main entry point for all SDK operations. It provides ac
 ```typescript
 import { DFlowClient } from 'dflow-sdk';
 
+// Development (default) - no API key required
+// Uses dev-*.dflow.net endpoints for testing with real capital
 const dflow = new DFlowClient();
+
+// Production - API key required
+// Uses *.dflow.net endpoints for production deployments
+const prodClient = new DFlowClient({
+  environment: 'production',
+  apiKey: 'your-api-key',
+});
 ```
 
 ## Configuration Options
@@ -24,9 +33,10 @@ const dflow = new DFlowClient();
 import { DFlowClient } from 'dflow-sdk';
 
 const dflow = new DFlowClient({
+  environment: 'development', // or 'production'
   apiKey: 'your-api-key',
-  metadataBaseUrl: 'https://prediction-markets-api.dflow.net/api/v1',
-  tradeBaseUrl: 'https://quote-api.dflow.net',
+  metadataBaseUrl: 'https://custom-api.example.com/api/v1', // Optional override
+  tradeBaseUrl: 'https://custom-trade.example.com', // Optional override
   wsOptions: {
     reconnect: true,
     reconnectInterval: 5000,
@@ -39,16 +49,24 @@ const dflow = new DFlowClient({
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `apiKey` | `string` | - | Optional API key for higher rate limits |
-| `metadataBaseUrl` | `string` | Production URL | Base URL for Metadata API |
-| `tradeBaseUrl` | `string` | Production URL | Base URL for Trade API |
+| `environment` | `'development' \| 'production'` | `'development'` | Environment to use. Development requires no API key. |
+| `apiKey` | `string` | - | API key for authenticated endpoints (required for production) |
+| `metadataBaseUrl` | `string` | Based on environment | Custom base URL for Metadata API (overrides environment) |
+| `tradeBaseUrl` | `string` | Based on environment | Custom base URL for Trade API (overrides environment) |
 | `wsOptions` | `WebSocketOptions` | See below | WebSocket configuration |
+
+### Environment Details
+
+| Environment | API Key | Endpoints | Use Case |
+|-------------|---------|-----------|----------|
+| `development` | Not required | `dev-*.dflow.net` | Testing with real capital against Kalshi |
+| `production` | Required | `*.dflow.net` | Production deployments |
 
 ### WebSocket Options
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `url` | `string` | Production URL | WebSocket server URL |
+| `url` | `string` | Based on environment | WebSocket server URL |
 | `reconnect` | `boolean` | `true` | Auto-reconnect on disconnect |
 | `reconnectInterval` | `number` | `5000` | Milliseconds between reconnect attempts |
 | `maxReconnectAttempts` | `number` | `10` | Maximum reconnection attempts |
@@ -97,29 +115,28 @@ const dflow = new DFlowClient();
 dflow.setApiKey('your-api-key');
 ```
 
-## Development Endpoints
+## Environment Selection
 
-For testing against development environments:
+The SDK defaults to development environment, which is ideal for testing:
 
 ```typescript
-import {
-  DFlowClient,
-  DEV_METADATA_API_BASE_URL,
-  DEV_TRADE_API_BASE_URL,
-  DEV_WEBSOCKET_URL,
-} from 'dflow-sdk';
+import { DFlowClient } from 'dflow-sdk';
 
-const devClient = new DFlowClient({
-  metadataBaseUrl: DEV_METADATA_API_BASE_URL,
-  tradeBaseUrl: DEV_TRADE_API_BASE_URL,
-  wsOptions: {
-    url: DEV_WEBSOCKET_URL,
-  },
+// Development (default) - no API key required
+const devClient = new DFlowClient();
+
+// Equivalent to:
+const devClient2 = new DFlowClient({ environment: 'development' });
+
+// Production - requires API key
+const prodClient = new DFlowClient({
+  environment: 'production',
+  apiKey: 'your-api-key',
 });
 ```
 
-<Callout type="warn">
-  Development endpoints may have different data and availability than production. Use production endpoints for live trading.
+<Callout type="info">
+  Development environment uses `dev-*.dflow.net` endpoints and allows testing with real capital against Kalshi without an API key. Production environment uses `*.dflow.net` endpoints and requires an API key.
 </Callout>
 
 ## Type Exports

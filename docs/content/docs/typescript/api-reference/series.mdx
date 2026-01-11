@@ -5,7 +5,7 @@ description: Access series information for grouped prediction markets
 
 # Series API
 
-The Series API provides access to series information. Series are logical groupings of related events (e.g., "Bitcoin Daily" series containing daily Bitcoin price events).
+The Series API provides access to series information. Series are templates for recurring events, grouping related events together (e.g., all Bitcoin price events, all election events).
 
 ## Access
 
@@ -18,15 +18,40 @@ const series = dflow.series;
 
 ### getSeries
 
-Get all available series.
+Get all available series templates with optional filters.
 
 ```typescript
+// Get all series
 const allSeries = await dflow.series.getSeries();
 
 for (const s of allSeries) {
   console.log(`${s.ticker}: ${s.title}`);
 }
+
+// Filter by category
+const politicsSeries = await dflow.series.getSeries({
+  category: 'Politics',
+});
+
+// Filter by tags
+const cryptoSeries = await dflow.series.getSeries({
+  tags: 'crypto,bitcoin',
+});
+
+// Get only initialized series
+const initialized = await dflow.series.getSeries({
+  isInitialized: true,
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `category` | `string` | No | Filter by category (e.g., Politics, Economics, Entertainment) |
+| `tags` | `string` | No | Filter by tags (comma-separated list) |
+| `isInitialized` | `boolean` | No | Filter series that are initialized (have a market ledger) |
+| `status` | `MarketStatus` | No | Filter series by market status |
 
 **Returns:** `Series[]`
 
@@ -40,7 +65,8 @@ Get a specific series by ticker.
 const series = await dflow.series.getSeriesByTicker('KXBTC');
 
 console.log(`Title: ${series.title}`);
-console.log(`Description: ${series.description}`);
+console.log(`Category: ${series.category}`);
+console.log(`Tags: ${series.tags.join(', ')}`);
 ```
 
 ---

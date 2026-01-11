@@ -26,9 +26,9 @@ Get a single market by ticker.
 const market = await dflow.markets.getMarket('BTCD-25DEC0313-T92749.99');
 
 console.log(`Title: ${market.title}`);
-console.log(`YES Price: ${market.yesPrice}`);
-console.log(`NO Price: ${market.noPrice}`);
-console.log(`Volume 24h: ${market.volume24h}`);
+console.log(`YES Ask: ${market.yesAsk}`);
+console.log(`NO Ask: ${market.noAsk}`);
+console.log(`Volume: ${market.volume}`);
 ```
 
 ---
@@ -38,7 +38,7 @@ console.log(`Volume 24h: ${market.volume24h}`);
 Get a market by outcome token mint address.
 
 ```typescript
-const market = await dflow.markets.getMarketByMint('mint-address');
+const market = await dflow.markets.getMarketByMint('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 ```
 
 ---
@@ -51,11 +51,13 @@ List markets with optional filters.
 const response = await dflow.markets.getMarkets({
   status: 'active',
   eventTicker: 'BTCD-25DEC0313',
+  isInitialized: true,
+  sort: 'volume',
   limit: 50,
 });
 
 for (const market of response.markets) {
-  console.log(`${market.ticker}: YES=${market.yesPrice} NO=${market.noPrice}`);
+  console.log(`${market.ticker}: YES=${market.yesAsk} NO=${market.noAsk}`);
 }
 ```
 
@@ -63,11 +65,16 @@ for (const market of response.markets) {
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `status` | `MarketStatus` | No | Filter by status |
-| `eventTicker` | `string` | No | Filter by event |
-| `seriesTicker` | `string` | No | Filter by series |
-| `limit` | `number` | No | Max results per page |
-| `cursor` | `string` | No | Pagination cursor |
+| `status` | `MarketStatus` | No | Filter by status: `'active'`, `'closed'`, `'determined'`, `'finalized'` |
+| `isInitialized` | `boolean` | No | Filter markets that are initialized |
+| `sort` | `SortField` | No | Sort field: `'volume'`, `'volume_24h'`, `'liquidity'`, `'open_interest'` |
+| `tickers` | `string` | No | Filter by specific market tickers (comma-separated) |
+| `eventTicker` | `string` | No | Filter by event ticker |
+| `seriesTicker` | `string` | No | Filter by series ticker |
+| `maxCloseTs` | `number` | No | Filter markets closing before this timestamp |
+| `minCloseTs` | `number` | No | Filter markets closing after this timestamp |
+| `limit` | `number` | No | Maximum number of markets to return |
+| `cursor` | `number` | No | Pagination cursor (number of markets to skip) |
 
 ---
 
@@ -90,12 +97,24 @@ const markets = await dflow.markets.getMarketsBatch({
 
 ### getOutcomeMints
 
-Get all known outcome token mints.
+Get all outcome token mint addresses.
 
 ```typescript
-const mints = await dflow.markets.getOutcomeMints();
-console.log(`Total outcome mints: ${mints.length}`);
+// Get all outcome mints
+const allMints = await dflow.markets.getOutcomeMints();
+console.log(`Total outcome tokens: ${allMints.length}`);
+
+// Get outcome mints for markets closing after a specific date
+const futureMints = await dflow.markets.getOutcomeMints({
+  minCloseTs: Math.floor(Date.now() / 1000),  // Only markets not yet closed
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `minCloseTs` | `number` | No | Minimum close timestamp (Unix seconds). Only markets with close_time >= minCloseTs will be included. |
 
 ---
 
@@ -104,10 +123,10 @@ console.log(`Total outcome mints: ${mints.length}`);
 Filter a list of addresses to find which ones are outcome token mints.
 
 ```typescript
-const addresses = ['address1', 'address2', 'address3'];
-const outcomeMints = await dflow.markets.filterOutcomeMints(addresses);
+const walletTokens = ['addr1', 'addr2', 'addr3'];
+const predictionTokens = await dflow.markets.filterOutcomeMints(walletTokens);
 
-console.log(`Found ${outcomeMints.length} outcome mints`);
+console.log(`Found ${predictionTokens.length} prediction market tokens`);
 ```
 
 <Callout type="info">
@@ -118,11 +137,28 @@ console.log(`Found ${outcomeMints.length} outcome mints`);
 
 ### getMarketCandlesticks
 
-Get candlestick (OHLCV) data for a market.
+Get OHLCV candlestick data for a market.
 
 ```typescript
-const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749.99');
+const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749.99', {
+  startTs: 1704067200,    // Jan 1, 2024
+  endTs: 1704153600,      // Jan 2, 2024
+  periodInterval: 60,     // 1 hour candles
+});
+
+candles.forEach(c => {
+  console.log(`${c.timestamp}: O=${c.open} H=${c.high} L=${c.low} C=${c.close}`);
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ticker` | `string` | Yes | The market ticker |
+| `params.startTs` | `number` | Yes | Start timestamp (Unix seconds) |
+| `params.endTs` | `number` | Yes | End timestamp (Unix seconds) |
+| `params.periodInterval` | `number` | Yes | Candle period in minutes (1, 60, or 1440) |
 
 ---
 
@@ -131,7 +167,11 @@ const candles = await dflow.markets.getMarketCandlesticks('BTCD-25DEC0313-T92749
 Get candlestick data by mint address.
 
 ```typescript
-const candles = await dflow.markets.getMarketCandlesticksByMint('mint-address');
+const candles = await dflow.markets.getMarketCandlesticksByMint('EPjFWdd5...', {
+  startTs: 1704067200,
+  endTs: 1704153600,
+  periodInterval: 1440,  // Daily candles
+});
 ```
 
 ---
@@ -142,21 +182,28 @@ const candles = await dflow.markets.getMarketCandlesticksByMint('mint-address');
 interface Market {
   ticker: string;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   eventTicker: string;
   status: MarketStatus;
   result: MarketResult;
-  yesPrice?: number;
-  noPrice?: number;
-  volume?: number;
-  volume24h?: number;
-  openInterest?: number;
+  marketType: string;
+  yesSubTitle: string;
+  noSubTitle: string;
+  canCloseEarly: boolean;
+  rulesPrimary: string;
+  volume: number;
   liquidity?: number;
-  openTime?: string;
-  closeTime?: string;
-  expirationTime?: string;
+  openInterest: number;
+  openTime: number;     // Unix timestamp in seconds
+  closeTime: number;    // Unix timestamp in seconds
+  expirationTime: number;
   accounts: Record<string, MarketAccount>;
-  rules?: string;
+  rulesSecondary?: string | null;
+  earlyCloseCondition?: string | null;
+  yesAsk?: string | null;
+  yesBid?: string | null;
+  noAsk?: string | null;
+  noBid?: string | null;
 }
 
 type MarketStatus = 
@@ -191,9 +238,20 @@ const response = await dflow.markets.getMarkets({
 for (const market of response.markets) {
   console.log(`${market.title}`);
   console.log(`  Ticker: ${market.ticker}`);
-  console.log(`  YES: $${market.yesPrice?.toFixed(2)}`);
-  console.log(`  Volume: $${market.volume24h?.toLocaleString()}`);
+  console.log(`  YES Ask: ${market.yesAsk}`);
+  console.log(`  Volume: ${market.volume.toLocaleString()}`);
 }
+```
+
+### Get Initialized Markets Only
+
+```typescript
+const initialized = await dflow.markets.getMarkets({
+  isInitialized: true,
+  sort: 'volume',
+});
+
+console.log(`Found ${initialized.markets.length} initialized markets`);
 ```
 
 ### Get Outcome Token Mints

@@ -55,7 +55,8 @@ interface OrderResponse {
   transaction: string; // Base64 encoded transaction
   inAmount: string;
   outAmount: string;
-  priceImpactPct: number;
+  executionMode: 'sync' | 'async';
+  priceImpactPct?: number;
 }
 ```
 
@@ -74,9 +75,22 @@ console.log(`Order status: ${status.status}`);
 **Returns:**
 
 ```typescript
-interface OrderStatus {
+interface OrderStatusResponse {
   status: 'open' | 'closed' | 'failed' | 'pendingClose';
   signature: string;
+  inAmount?: string;
+  outAmount?: string;
+  fills?: OrderFill[];
+  error?: string;
+}
+
+interface OrderFill {
+  inputMint: string;
+  outputMint: string;
+  inAmount: string;
+  outAmount: string;
+  price: number;
+  timestamp: string;
 }
 ```
 

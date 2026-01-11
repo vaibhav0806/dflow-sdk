@@ -11,10 +11,17 @@ The SDK exports various constants for API endpoints, token addresses, and defaul
 
 ```typescript
 import {
-  // API URLs
+  // API URLs (default to development)
   METADATA_API_BASE_URL,
   TRADE_API_BASE_URL,
   WEBSOCKET_URL,
+
+  // Production API URLs
+  PROD_METADATA_API_BASE_URL,
+  PROD_TRADE_API_BASE_URL,
+  PROD_WEBSOCKET_URL,
+
+  // Deprecated - use base URLs instead
   DEV_METADATA_API_BASE_URL,
   DEV_TRADE_API_BASE_URL,
   DEV_WEBSOCKET_URL,
@@ -35,21 +42,33 @@ import {
 
 ## API URLs
 
+### Default (Development)
+
+These are the default URLs used when no environment is specified:
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `METADATA_API_BASE_URL` | `https://dev-prediction-markets-api.dflow.net/api/v1` | Development metadata API. No API key required. |
+| `TRADE_API_BASE_URL` | `https://dev-quote-api.dflow.net` | Development trade API. No API key required. |
+| `WEBSOCKET_URL` | `wss://dev-prediction-markets-api.dflow.net/api/v1/ws` | Development WebSocket. No API key required. |
+
 ### Production
 
-| Constant | Value |
-|----------|-------|
-| `METADATA_API_BASE_URL` | `https://prediction-markets-api.dflow.net/api/v1` |
-| `TRADE_API_BASE_URL` | `https://quote-api.dflow.net` |
-| `WEBSOCKET_URL` | `wss://prediction-markets-api.dflow.net/api/v1/ws` |
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PROD_METADATA_API_BASE_URL` | `https://prediction-markets-api.dflow.net/api/v1` | Production metadata API. Requires API key. |
+| `PROD_TRADE_API_BASE_URL` | `https://quote-api.dflow.net` | Production trade API. Requires API key. |
+| `PROD_WEBSOCKET_URL` | `wss://prediction-markets-api.dflow.net/api/v1/ws` | Production WebSocket. Requires API key. |
 
-### Development
+### Deprecated
 
-| Constant | Value |
-|----------|-------|
-| `DEV_METADATA_API_BASE_URL` | Dev metadata API endpoint |
-| `DEV_TRADE_API_BASE_URL` | Dev trade API endpoint |
-| `DEV_WEBSOCKET_URL` | Dev WebSocket endpoint |
+These constants are deprecated and will be removed in a future version:
+
+| Constant | Note |
+|----------|------|
+| `DEV_METADATA_API_BASE_URL` | Use `METADATA_API_BASE_URL` instead |
+| `DEV_TRADE_API_BASE_URL` | Use `TRADE_API_BASE_URL` instead |
+| `DEV_WEBSOCKET_URL` | Use `WEBSOCKET_URL` instead |
 
 ## Token Mints
 
@@ -74,30 +93,46 @@ import {
 
 ## Usage Examples
 
-### Using Production Endpoints (Default)
+### Using Development Environment (Default)
 
 ```typescript
 import { DFlowClient } from 'dflow-sdk';
 
-// Uses production URLs by default
+// Development is the default - no API key required
 const dflow = new DFlowClient();
+
+// Equivalent to:
+const dflow2 = new DFlowClient({ environment: 'development' });
 ```
 
-### Using Development Endpoints
+### Using Production Environment
+
+```typescript
+import { DFlowClient } from 'dflow-sdk';
+
+// Production requires an API key
+const dflow = new DFlowClient({
+  environment: 'production',
+  apiKey: 'your-api-key',
+});
+```
+
+### Using Custom Endpoints
 
 ```typescript
 import {
   DFlowClient,
-  DEV_METADATA_API_BASE_URL,
-  DEV_TRADE_API_BASE_URL,
-  DEV_WEBSOCKET_URL,
+  PROD_METADATA_API_BASE_URL,
+  PROD_TRADE_API_BASE_URL,
+  PROD_WEBSOCKET_URL,
 } from 'dflow-sdk';
 
+// Custom endpoint configuration (overrides environment)
 const dflow = new DFlowClient({
-  metadataBaseUrl: DEV_METADATA_API_BASE_URL,
-  tradeBaseUrl: DEV_TRADE_API_BASE_URL,
+  metadataBaseUrl: PROD_METADATA_API_BASE_URL,
+  tradeBaseUrl: PROD_TRADE_API_BASE_URL,
   wsOptions: {
-    url: DEV_WEBSOCKET_URL,
+    url: PROD_WEBSOCKET_URL,
   },
 });
 ```

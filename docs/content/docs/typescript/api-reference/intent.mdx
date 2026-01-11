@@ -89,7 +89,17 @@ const intent = await dflow.intent.submitIntent({
 interface IntentResponse {
   transaction: string; // Base64 encoded transaction
   intentId: string;    // Unique intent identifier
-  estimatedOutput: string;
+  quote: IntentQuote;  // Quote details
+}
+
+interface IntentQuote {
+  inputMint: string;
+  outputMint: string;
+  inAmount: string;
+  outAmount: string;
+  minOutAmount: string;
+  maxInAmount: string;
+  expiresAt: string;
 }
 ```
 
@@ -149,7 +159,7 @@ const intent = await dflow.intent.submitIntent({
 });
 
 console.log(`Intent ID: ${intent.intentId}`);
-console.log(`Estimated output: ${intent.estimatedOutput}`);
+console.log(`Estimated output: ${intent.quote.outAmount}`);
 
 // Sign and submit
 const result = await signSendAndConfirm(connection, intent.transaction, keypair);
@@ -171,7 +181,7 @@ const intent = await dflow.intent.submitIntent({
   userPublicKey: keypair.publicKey.toBase58(),
 });
 
-console.log(`Will receive: ${intent.estimatedOutput} YES tokens`);
+console.log(`Will receive: ${intent.quote.outAmount} YES tokens`);
 ```
 
 ### Compare Quote vs Imperative

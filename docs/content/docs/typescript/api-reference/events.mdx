@@ -20,7 +20,7 @@ const events = dflow.events;
 
 ### getEvent
 
-Get a single event by ticker.
+Get a single event by its ID.
 
 ```typescript
 // Basic usage
@@ -28,13 +28,14 @@ const event = await dflow.events.getEvent('BTCD-25DEC0313');
 
 // Include markets in response
 const eventWithMarkets = await dflow.events.getEvent('BTCD-25DEC0313', true);
+console.log(eventWithMarkets.markets); // Array of Market objects
 ```
 
 **Parameters:**
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `ticker` | `string` | Yes | Event ticker identifier |
-| `withMarkets` | `boolean` | No | Include markets in response |
+| `eventId` | `string` | Yes | The unique identifier of the event (event ticker) |
+| `withNestedMarkets` | `boolean` | No | If true, includes all markets within the event |
 
 **Returns:** `Event`
 
@@ -48,29 +49,34 @@ List events with optional filters.
 const response = await dflow.events.getEvents({
   status: 'active',
   limit: 50,
-  seriesTicker: 'KXBTC',
-  cursor: 'next-page-cursor',
+  seriesTickers: 'KXBTC,KXETH', // Comma-separated, max 25
+  isInitialized: true,
+  sort: 'volume',
+  withNestedMarkets: true,
 });
 
 console.log(response.events);    // Event[]
-console.log(response.cursor);    // Pagination cursor
+console.log(response.cursor);    // Pagination cursor (number)
 ```
 
 **Parameters:**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `status` | `EventStatus` | No | Filter by status: `'scheduled'`, `'active'`, `'closed'`, `'settled'` |
-| `seriesTicker` | `string` | No | Filter by series |
-| `limit` | `number` | No | Max results per page |
-| `cursor` | `string` | No | Pagination cursor |
+| `status` | `MarketStatus` | No | Filter by status: `'active'`, `'closed'`, `'determined'`, `'finalized'` |
+| `seriesTickers` | `string` | No | Filter by series tickers (comma-separated, max 25) |
+| `isInitialized` | `boolean` | No | Filter events that are initialized (have a market ledger) |
+| `sort` | `SortField` | No | Sort field: `'volume'`, `'volume_24h'`, `'liquidity'`, `'open_interest'`, `'start_date'` |
+| `withNestedMarkets` | `boolean` | No | Include nested markets in response |
+| `limit` | `number` | No | Maximum number of events to return |
+| `cursor` | `number` | No | Pagination cursor (number of events to skip) |
 
 **Returns:** `EventsResponse`
 
 ```typescript
 interface EventsResponse {
   events: Event[];
-  cursor?: string;
+  cursor?: number | null;
 }
 ```
 
@@ -78,14 +84,27 @@ interface EventsResponse {
 
 ### getEventForecastHistory
 
-Get forecast history for an event.
+Get forecast percentile history for an event.
 
 ```typescript
-const forecast = await dflow.events.getEventForecastHistory(
-  'KXBTC',           // Series ticker
-  'BTCD-25DEC0313'   // Event ticker
-);
+const history = await dflow.events.getEventForecastHistory('KXBTC', 'event-123', {
+  percentiles: '2500,5000,7500',  // 25th, 50th, 75th percentiles
+  startTs: 1704067200,  // Jan 1, 2024
+  endTs: 1704153600,    // Jan 2, 2024
+  periodInterval: 60,   // 1 hour intervals
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `seriesTicker` | `string` | Yes | The series ticker (e.g., 'KXBTC') |
+| `eventId` | `string` | Yes | The event identifier within the series |
+| `params.percentiles` | `string` | Yes | Comma-separated percentile values (0-10000, max 10) |
+| `params.startTs` | `number` | Yes | Start timestamp (Unix seconds) |
+| `params.endTs` | `number` | Yes | End timestamp (Unix seconds) |
+| `params.periodInterval` | `number` | Yes | Period interval in minutes (0, 1, 60, or 1440) |
 
 ---
 
@@ -94,22 +113,40 @@ const forecast = await dflow.events.getEventForecastHistory(
 Get forecast history by mint address.
 
 ```typescript
-const forecast = await dflow.events.getEventForecastByMint('mint-address');
+const history = await dflow.events.getEventForecastByMint('EPjFWdd5...', {
+  percentiles: '5000',  // 50th percentile (median)
+  startTs: 1704067200,
+  endTs: 1704153600,
+  periodInterval: 1440,  // Daily intervals
+});
 ```
 
 ---
 
 ### getEventCandlesticks
 
-Get candlestick (OHLCV) data for an event.
+Get OHLCV candlestick data for an event.
 
 ```typescript
-const candles = await dflow.events.getEventCandlesticks('BTCD-25DEC0313');
+const candles = await dflow.events.getEventCandlesticks('BTCD-25DEC0313', {
+  startTs: 1704067200,    // Jan 1, 2024
+  endTs: 1704153600,      // Jan 2, 2024
+  periodInterval: 60,     // 1 hour candles
+});
 
-for (const candle of candles) {
-  console.log(`Open: ${candle.open}, Close: ${candle.close}`);
-}
+candles.forEach(c => {
+  console.log(`Open: ${c.open}, High: ${c.high}, Low: ${c.low}, Close: ${c.close}`);
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `ticker` | `string` | Yes | The event ticker |
+| `params.startTs` | `number` | Yes | Start timestamp (Unix seconds) |
+| `params.endTs` | `number` | Yes | End timestamp (Unix seconds) |
+| `params.periodInterval` | `number` | Yes | Candle period in minutes (1, 60, or 1440) |
 
 ---
 
@@ -119,19 +156,26 @@ for (const candle of candles) {
 interface Event {
   ticker: string;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   seriesTicker: string;
-  status: EventStatus;
-  category?: string;
-  mutuallyExclusive: boolean;
-  markets?: Market[];
-  openTime?: string;
-  closeTime?: string;
-  expirationTime?: string;
-  settlementTime?: string;
+  competition?: string | null;
+  competitionScope?: string | null;
+  imageUrl?: string | null;
+  liquidity?: number | null;
+  markets?: Market[] | null;
+  openInterest?: number | null;
+  settlementSources?: SettlementSource[] | null;
+  strikeDate?: number | null;
+  strikePeriod?: string | null;
+  mutuallyExclusive?: boolean | null;
+  volume?: number | null;
+  volume24h?: number | null;
 }
 
-type EventStatus = 'scheduled' | 'active' | 'closed' | 'settled';
+interface SettlementSource {
+  name: string;
+  url: string;
+}
 ```
 
 ## Examples
@@ -146,10 +190,31 @@ for (const event of response.events) {
 }
 ```
 
+### Get Events with Sorting and Filtering
+
+```typescript
+// Get active events sorted by volume
+const { events, cursor } = await dflow.events.getEvents({
+  status: 'active',
+  sort: 'volume',
+});
+
+// Get events for specific series
+const btcEvents = await dflow.events.getEvents({
+  seriesTickers: 'KXBTC,KXETH',
+  limit: 50,
+});
+
+// Get initialized events only
+const initialized = await dflow.events.getEvents({
+  isInitialized: true,
+});
+```
+
 ### Paginate Through Events
 
 ```typescript
-let cursor: string | undefined;
+let cursor: number | undefined;
 const allEvents: Event[] = [];
 
 do {
@@ -160,8 +225,8 @@ do {
   });
   
   allEvents.push(...response.events);
-  cursor = response.cursor;
-} while (cursor);
+  cursor = response.cursor ?? undefined;
+} while (cursor !== undefined);
 
 console.log(`Total events: ${allEvents.length}`);
 ```
@@ -174,7 +239,7 @@ const event = await dflow.events.getEvent('BTCD-25DEC0313', true);
 if (event.markets) {
   for (const market of event.markets) {
     console.log(`Market: ${market.ticker}`);
-    console.log(`  YES: ${market.yesPrice}, NO: ${market.noPrice}`);
+    console.log(`  YES Ask: ${market.yesAsk}, NO Ask: ${market.noAsk}`);
   }
 }
 ```

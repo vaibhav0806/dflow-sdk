@@ -1,11 +1,11 @@
 ---
 title: Sports API
-description: Access sports filtering options including leagues and teams
+description: Access sports filtering options including competitions and scopes
 ---
 
 # Sports API
 
-The Sports API provides filtering options for sports-related prediction markets, including available leagues and teams.
+The Sports API provides filtering options for sports-related prediction markets, including available scopes and competitions for each sport.
 
 ## Access
 
@@ -18,27 +18,31 @@ const sports = dflow.sports;
 
 ### getFiltersBySports
 
-Get available sports with their leagues and teams.
+Get available sports filters organized by sport.
 
 ```typescript
-const filters = await dflow.sports.getFiltersBySports();
+const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
 
-for (const sport of filters.sports) {
-  console.log(`${sport.sport}: ${sport.leagues.join(', ')}`);
-}
+// Iterate through sports in order
+sportOrdering.forEach(sport => {
+  const filters = filtersBySports[sport];
+  console.log(`${sport}:`);
+  console.log(`  Competitions: ${filters?.competitions?.join(', ')}`);
+  console.log(`  Scopes: ${filters?.scopes?.join(', ')}`);
+});
 ```
 
-**Returns:** `SportsFilters`
+**Returns:** `FiltersBySportsResponse`
 
 ```typescript
-interface SportsFilters {
-  sports: SportsFilter[];
+interface FiltersBySportsResponse {
+  filtersBySports: Record<string, SportFilters>;
+  sportOrdering: string[];
 }
 
-interface SportsFilter {
-  sport: string;
-  leagues: string[];
-  teams?: string[];
+interface SportFilters {
+  competitions?: string[];
+  scopes?: string[];
 }
 ```
 
@@ -46,49 +50,53 @@ interface SportsFilter {
 
 ## Examples
 
-### List All Sports and Leagues
+### List All Sports and Filters
 
 ```typescript
-const filters = await dflow.sports.getFiltersBySports();
+const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
 
 console.log('Available sports:\n');
 
-for (const sport of filters.sports) {
-  console.log(`🏆 ${sport.sport}`);
-  console.log(`   Leagues: ${sport.leagues.join(', ')}`);
-  if (sport.teams?.length) {
-    console.log(`   Teams: ${sport.teams.slice(0, 5).join(', ')}...`);
+sportOrdering.forEach(sport => {
+  const filters = filtersBySports[sport];
+  console.log(`🏆 ${sport}`);
+  if (filters?.competitions?.length) {
+    console.log(`   Competitions: ${filters.competitions.join(', ')}`);
+  }
+  if (filters?.scopes?.length) {
+    console.log(`   Scopes: ${filters.scopes.join(', ')}`);
   }
   console.log('');
-}
+});
 ```
 
 ### Find Events by Sport
 
 ```typescript
-const filters = await dflow.sports.getFiltersBySports();
+const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
 
-// Find NFL markets
-const nfl = filters.sports.find(s =>
-  s.leagues.some(l => l.toLowerCase().includes('nfl'))
-);
-
-if (nfl) {
-  const results = await dflow.search.search({ query: 'NFL' });
-  console.log(`Found ${results.events.length} NFL-related events`);
+// Check if NFL exists in any sport's competitions
+for (const sport of sportOrdering) {
+  const filters = filtersBySports[sport];
+  if (filters?.competitions?.some(c => c.toLowerCase().includes('nfl'))) {
+    const results = await dflow.search.search({ query: 'NFL' });
+    console.log(`Found ${results.events.length} NFL-related events`);
+    break;
+  }
 }
 ```
 
-### Get Teams for a League
+### Get Competitions for Each Sport
 
 ```typescript
-const filters = await dflow.sports.getFiltersBySports();
+const { filtersBySports, sportOrdering } = await dflow.sports.getFiltersBySports();
 
-for (const sport of filters.sports) {
-  if (sport.teams && sport.teams.length > 0) {
-    console.log(`${sport.sport} teams:`);
-    for (const team of sport.teams) {
-      console.log(`  - ${team}`);
+for (const sport of sportOrdering) {
+  const filters = filtersBySports[sport];
+  if (filters?.competitions && filters.competitions.length > 0) {
+    console.log(`${sport} competitions:`);
+    for (const competition of filters.competitions) {
+      console.log(`  - ${competition}`);
     }
   }
 }

@@ -68,35 +68,59 @@ async function getMarketSafely(ticker: string) {
 }
 ```
 
-### Rate Limit Handling
+### Rate Limit Handling with Built-in Retry
+
+The SDK provides built-in retry utilities with exponential backoff:
 
 ```typescript
-async function fetchWithRetry<T>(
-  fn: () => Promise<T>,
-  maxRetries = 3
-): Promise<T> {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (error instanceof DFlowApiError && error.statusCode === 429) {
-        if (attempt < maxRetries) {
-          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          console.log(`Rate limited. Retrying in ${delay}ms...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
+import { withRetry, createRetryable, DFlowApiError } from 'dflow-sdk';
+
+// Basic usage with default options
+const markets = await withRetry(() => dflow.markets.getMarkets());
+
+// With custom options
+const events = await withRetry(
+  () => dflow.events.getEvents({ limit: 100 }),
+  { maxRetries: 5, initialDelayMs: 500 }
+);
+
+// Custom retry condition
+const quote = await withRetry(
+  () => dflow.swap.getQuote(params),
+  {
+    shouldRetry: (error) => {
+      if (error instanceof DFlowApiError) {
+        return error.statusCode === 429; // Only retry rate limits
       }
-      throw error;
+      return false;
     }
   }
-  throw new Error('Max retries exceeded');
-}
-
-// Usage
-const markets = await fetchWithRetry(() => 
-  dflow.markets.getMarkets({ status: 'active' })
 );
+```
+
+**Retry Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxRetries` | `number` | `3` | Maximum retry attempts |
+| `initialDelayMs` | `number` | `1000` | Initial delay before first retry |
+| `maxDelayMs` | `number` | `30000` | Maximum delay between retries |
+| `backoffMultiplier` | `number` | `2` | Multiplier for exponential backoff |
+| `shouldRetry` | `function` | Rate limit + server errors | Custom retry condition |
+
+### Creating Reusable Retry Functions
+
+```typescript
+import { createRetryable } from 'dflow-sdk';
+
+// Create a retryable version of a function
+const getMarketsWithRetry = createRetryable(
+  (params) => dflow.markets.getMarkets(params),
+  { maxRetries: 5 }
+);
+
+// Use it like the original function
+const markets = await getMarketsWithRetry({ limit: 50 });
 ```
 
 ### Comprehensive Error Handler
@@ -179,10 +203,54 @@ try {
 }
 ```
 
+## Pagination Utilities
+
+The SDK provides utilities for handling paginated API responses:
+
+```typescript
+import { paginate, collectAll, countAll, findFirst } from 'dflow-sdk';
+
+// Iterate through all markets
+for await (const market of paginate(
+  (params) => dflow.markets.getMarkets(params),
+  { getItems: (r) => r.markets }
+)) {
+  console.log(market.ticker, market.yesAsk);
+}
+
+// Collect all items into an array
+const allMarkets = await collectAll(
+  (params) => dflow.markets.getMarkets(params),
+  { getItems: (r) => r.markets }
+);
+
+// Count all items without storing them
+const totalMarkets = await countAll(
+  (params) => dflow.markets.getMarkets(params),
+  { getItems: (r) => r.markets }
+);
+
+// Find the first item matching a predicate
+const market = await findFirst(
+  (params) => dflow.markets.getMarkets(params),
+  { getItems: (r) => r.markets },
+  (m) => m.title.includes('Bitcoin')
+);
+```
+
+**Pagination Options:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `getItems` | `(response) => items[]` | Required. Extracts items array from response. |
+| `getCursor` | `(response) => cursor` | Optional. Extracts cursor (default: `response.cursor`) |
+| `maxItems` | `number` | Optional. Maximum items to fetch in total |
+| `pageSize` | `number` | Optional. Items per page (API default) |
+
 ## Best Practices
 
 1. **Always use try-catch**: Wrap API calls in try-catch blocks
 2. **Check error type**: Use `instanceof DFlowApiError` for API errors
 3. **Log appropriately**: Include status code and response for debugging
-4. **Handle rate limits**: Implement exponential backoff for 429 errors
+4. **Use built-in retry**: Use `withRetry` for automatic exponential backoff on rate limits
 5. **Graceful degradation**: Provide fallbacks for non-critical failures

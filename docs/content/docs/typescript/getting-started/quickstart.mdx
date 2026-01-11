@@ -15,13 +15,20 @@ This guide will walk you through the basics of using the DFlow SDK to discover m
 ```typescript
 import { DFlowClient } from 'dflow-sdk';
 
-const dflow = new DFlowClient({
-  apiKey: 'your-api-key', // Optional, for higher rate limits
+// Development (default) - no API key required
+// Uses dev-*.dflow.net endpoints for testing with real capital
+const dflow = new DFlowClient();
+
+// Production - API key required
+// Uses *.dflow.net endpoints for production deployments
+const prodClient = new DFlowClient({
+  environment: 'production',
+  apiKey: 'your-api-key',
 });
 ```
 
 <Callout type="info">
-  The API key is optional for most read operations. Contact DFlow for access to higher rate limits.
+  Development environment is the default and requires no API key. It uses `dev-*.dflow.net` endpoints for testing with real capital against Kalshi. For production deployments, use `environment: 'production'` with an API key.
 </Callout>
 
 ## Discover Markets
@@ -65,7 +72,7 @@ const marketsResponse = await dflow.markets.getMarkets({
 });
 
 for (const market of marketsResponse.markets) {
-  console.log(`${market.ticker}: YES=${market.yesPrice}, NO=${market.noPrice}`);
+  console.log(`${market.ticker}: YES=${market.yesAsk}, NO=${market.noAsk}`);
 }
 ```
 

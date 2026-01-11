@@ -5,7 +5,7 @@ description: Access real-time market data and milestones
 
 # Live Data API
 
-The Live Data API provides access to real-time data feeds and milestone information for prediction markets.
+The Live Data API provides access to real-time milestone and progress data for prediction markets. These endpoints relay data directly from the Kalshi API.
 
 ## Access
 
@@ -21,34 +21,75 @@ const liveData = dflow.liveData;
 Get live data for specific milestones.
 
 ```typescript
-const data = await dflow.liveData.getLiveData(['milestone1', 'milestone2']);
+const data = await dflow.liveData.getLiveData(['milestone-1', 'milestone-2']);
+data.forEach(d => console.log(`${d.milestones[0]?.name}: ${d.milestones[0]?.value}`));
 ```
 
 **Parameters:**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `milestones` | `string[]` | Yes | Array of milestone identifiers |
+| `milestoneIds` | `string[]` | Yes | Array of milestone identifiers (max 100) |
+
+**Returns:** `LiveData[]`
 
 ---
 
 ### getLiveDataByEvent
 
-Get live data for an event by ticker.
+Get live data for an event by ticker. Fetches all live data for an event by automatically looking up related milestones.
 
 ```typescript
+// Get all live data for an event
 const data = await dflow.liveData.getLiveDataByEvent('BTCD-25DEC0313');
+
+// Filter by category
+const sportsData = await dflow.liveData.getLiveDataByEvent('SPORTS-EVENT', {
+  category: 'sports',
+  competition: 'NFL',
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `eventTicker` | `string` | Yes | The event ticker |
+| `params.minimumStartDate` | `string` | No | Minimum start date (RFC3339 format) |
+| `params.category` | `string` | No | Filter by milestone category |
+| `params.competition` | `string` | No | Filter by competition |
+| `params.sourceId` | `string` | No | Filter by source ID |
+| `params.type` | `string` | No | Filter by milestone type |
+
+**Returns:** `LiveData`
 
 ---
 
 ### getLiveDataByMint
 
-Get live data by outcome token mint address.
+Get live data by market mint address.
 
 ```typescript
-const data = await dflow.liveData.getLiveDataByMint('mint-address');
+const data = await dflow.liveData.getLiveDataByMint('EPjFWdd5...');
+
+// With filters
+const filteredData = await dflow.liveData.getLiveDataByMint('EPjFWdd5...', {
+  type: 'price',
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mintAddress` | `string` | Yes | Market mint address (ledger or outcome mint) |
+| `params.minimumStartDate` | `string` | No | Minimum start date (RFC3339 format) |
+| `params.category` | `string` | No | Filter by milestone category |
+| `params.competition` | `string` | No | Filter by competition |
+| `params.sourceId` | `string` | No | Filter by source ID |
+| `params.type` | `string` | No | Filter by milestone type |
+
+**Returns:** `LiveData`
 
 ---
 
@@ -63,6 +104,16 @@ const liveData = await dflow.liveData.getLiveDataByEvent(eventTicker);
 
 console.log(`Live data for ${eventTicker}:`);
 console.log(liveData);
+```
+
+### Get Live Data with Filters
+
+```typescript
+const data = await dflow.liveData.getLiveDataByEvent('SPORTS-EVENT', {
+  category: 'sports',
+  competition: 'NFL',
+  type: 'score',
+});
 ```
 
 ### Get Live Data by Market Mint

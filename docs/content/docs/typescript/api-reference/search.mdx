@@ -33,17 +33,23 @@ for (const event of results.events) {
 
 **Parameters:**
 
-```typescript
-interface SearchParams {
-  query: string;    // Search term
-  limit?: number;   // Max results to return
-}
-```
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `query` | `string` | Yes | The search query string |
+| `sort` | `SortField` | No | Sort field: `'volume'`, `'volume_24h'`, `'liquidity'`, `'open_interest'`, `'start_date'` |
+| `order` | `'asc' \| 'desc'` | No | Sort order |
+| `limit` | `number` | No | Maximum results to return |
+| `cursor` | `number` | No | Pagination cursor |
+| `withNestedMarkets` | `boolean` | No | Include nested markets in response |
+| `withMarketAccounts` | `boolean` | No | Include market account information |
+| `status` | `MarketStatus` | No | Filter by status |
+| `entityType` | `'events' \| 'markets' \| 'series'` | No | Type of entity to search for |
 
 **Returns:** `SearchResult`
 
 ```typescript
 interface SearchResult {
+  cursor: number;
   events: Event[];  // Events with nested markets
 }
 ```
@@ -64,31 +70,42 @@ console.log(`Found ${results.events.length} events for "bitcoin":\n`);
 for (const event of results.events) {
   console.log(`📊 ${event.title}`);
   console.log(`   Ticker: ${event.ticker}`);
-  console.log(`   Status: ${event.status}`);
   console.log('');
 }
 ```
 
-### Search with Limit
+### Search with Sorting and Pagination
 
 ```typescript
-// Get top 5 results
-const results = await dflow.search.search({
+// Search with sorting
+const sortedResults = await dflow.search.search({
   query: 'election',
-  limit: 5,
+  sort: 'volume',
+  order: 'desc',
+  limit: 20,
 });
 
-console.log(`Top ${results.events.length} election events:`);
-for (const event of results.events) {
+console.log(`Top ${sortedResults.events.length} election events by volume:`);
+for (const event of sortedResults.events) {
   console.log(`  - ${event.title}`);
+}
+
+// Paginate through results
+if (sortedResults.cursor) {
+  const nextPage = await dflow.search.search({
+    query: 'election',
+    cursor: sortedResults.cursor,
+  });
 }
 ```
 
-### Search and Get Markets
+### Search with Nested Markets
 
 ```typescript
 const results = await dflow.search.search({
   query: 'NFL',
+  withNestedMarkets: true,
+  withMarketAccounts: true,
 });
 
 // Get markets for each matching event
@@ -98,7 +115,7 @@ for (const event of results.events) {
   if (event.markets && event.markets.length > 0) {
     for (const market of event.markets) {
       console.log(`  - ${market.title}`);
-      console.log(`    YES: ${market.yesPrice} | NO: ${market.noPrice}`);
+      console.log(`    YES Ask: ${market.yesAsk} | NO Ask: ${market.noAsk}`);
     }
   }
 }
@@ -115,6 +132,7 @@ async function searchMarkets(query: string) {
   const results = await dflow.search.search({
     query: query.trim(),
     limit: 20,
+    withNestedMarkets: true,
   });
 
   return results.events.flatMap(event => {
@@ -124,8 +142,8 @@ async function searchMarkets(query: string) {
       eventTitle: event.title,
       marketTitle: market.title,
       ticker: market.ticker,
-      yesPrice: market.yesPrice,
-      noPrice: market.noPrice,
+      yesAsk: market.yesAsk,
+      noAsk: market.noAsk,
     }));
   });
 }

@@ -5,7 +5,7 @@ description: Query historical trade data for prediction markets
 
 # Trades API
 
-The Trades API provides access to historical trade data for prediction markets.
+The Trades API provides access to historical trade data for prediction markets. Relays requests directly to Kalshi API.
 
 ## Access
 
@@ -21,13 +21,13 @@ const trades = dflow.trades;
 Get historical trades with optional filters.
 
 ```typescript
-const response = await dflow.trades.getTrades({
-  marketTicker: 'BTCD-25DEC0313-T92749.99',
+const { trades, cursor } = await dflow.trades.getTrades({
+  ticker: 'BTCD-25DEC0313-T92749.99',
   limit: 100,
 });
 
-for (const trade of response.trades) {
-  console.log(`${trade.side} @ ${trade.price} - ${trade.quantity} shares`);
+for (const trade of trades) {
+  console.log(`${trade.side} @ ${trade.price} - ${trade.count} shares`);
 }
 ```
 
@@ -35,9 +35,11 @@ for (const trade of response.trades) {
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `marketTicker` | `string` | No | Filter by market ticker |
-| `limit` | `number` | No | Maximum trades to return |
-| `cursor` | `string` | No | Pagination cursor |
+| `ticker` | `string` | No | Filter by market ticker |
+| `minTs` | `number` | No | Filter trades after this Unix timestamp |
+| `maxTs` | `number` | No | Filter trades before this Unix timestamp |
+| `limit` | `number` | No | Maximum trades to return (1-1000, default 100) |
+| `cursor` | `string` | No | Pagination cursor (trade ID) to start from |
 
 ---
 
@@ -46,8 +48,25 @@ for (const trade of response.trades) {
 Get trades by outcome token mint address.
 
 ```typescript
-const response = await dflow.trades.getTradesByMint('mint-address');
+const { trades } = await dflow.trades.getTradesByMint('EPjFWdd5...', {
+  limit: 50,
+});
+
+// Filter by timestamp
+const recentTrades = await dflow.trades.getTradesByMint('EPjFWdd5...', {
+  minTs: Date.now() / 1000 - 86400,  // Last 24 hours
+});
 ```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `mintAddress` | `string` | Yes | Mint address (ledger or outcome mint) |
+| `params.minTs` | `number` | No | Filter trades after this Unix timestamp |
+| `params.maxTs` | `number` | No | Filter trades before this Unix timestamp |
+| `params.limit` | `number` | No | Maximum trades to return (1-1000, default 100) |
+| `params.cursor` | `string` | No | Pagination cursor (trade ID) to start from |
 
 ---
 
@@ -55,14 +74,14 @@ const response = await dflow.trades.getTradesByMint('mint-address');
 
 ```typescript
 interface Trade {
-  id: string;
-  marketTicker: string;
-  side: 'yes' | 'no';
-  price: number;
-  quantity: number;
-  timestamp: string;
-  taker?: string;
-  maker?: string;
+  tradeId: string;
+  ticker: string;
+  side: string;
+  yesPrice: number;
+  noPrice: number;
+  count: number;
+  takerSide: string;
+  createdTime: string;
 }
 
 interface TradesResponse {
@@ -76,54 +95,41 @@ interface TradesResponse {
 ### Get Recent Trades
 
 ```typescript
-const response = await dflow.trades.getTrades({
-  marketTicker: 'BTCD-25DEC0313-T92749.99',
+const { trades } = await dflow.trades.getTrades({
+  ticker: 'BTCD-25DEC0313-T92749.99',
   limit: 20,
 });
 
 console.log('Recent Trades:');
-for (const trade of response.trades) {
-  const time = new Date(trade.timestamp).toLocaleTimeString();
-  console.log(`[${time}] ${trade.side.toUpperCase()} ${trade.quantity} @ $${trade.price}`);
+for (const trade of trades) {
+  const time = new Date(trade.createdTime).toLocaleTimeString();
+  console.log(`[${time}] ${trade.takerSide.toUpperCase()} ${trade.count} @ YES=$${trade.yesPrice}`);
 }
 ```
 
-### Calculate Volume
+### Filter by Timestamp Range
 
 ```typescript
-const response = await dflow.trades.getTrades({
-  marketTicker: 'BTCD-25DEC0313-T92749.99',
-  limit: 1000,
+// Get trades from a specific time range
+const { trades } = await dflow.trades.getTrades({
+  ticker: 'BTCD-25DEC0313-T92749.99',
+  minTs: 1704067200,  // Jan 1, 2024
+  maxTs: 1704153600,  // Jan 2, 2024
 });
 
-const totalVolume = response.trades.reduce(
-  (sum, trade) => sum + trade.price * trade.quantity,
-  0
-);
-
-const yesVolume = response.trades
-  .filter(t => t.side === 'yes')
-  .reduce((sum, t) => sum + t.price * t.quantity, 0);
-
-const noVolume = response.trades
-  .filter(t => t.side === 'no')
-  .reduce((sum, t) => sum + t.price * t.quantity, 0);
-
-console.log(`Total Volume: $${totalVolume.toLocaleString()}`);
-console.log(`YES Volume: $${yesVolume.toLocaleString()}`);
-console.log(`NO Volume: $${noVolume.toLocaleString()}`);
+console.log(`Found ${trades.length} trades in range`);
 ```
 
 ### Paginate Through All Trades
 
 ```typescript
-async function getAllTrades(marketTicker: string): Promise<Trade[]> {
+async function getAllTrades(ticker: string): Promise<Trade[]> {
   const allTrades: Trade[] = [];
   let cursor: string | undefined;
 
   do {
     const response = await dflow.trades.getTrades({
-      marketTicker,
+      ticker,
       limit: 100,
       cursor,
     });
