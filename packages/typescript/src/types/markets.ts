@@ -66,6 +66,8 @@ export interface Market {
   rulesPrimary: string;
   /** Total volume traded */
   volume: number;
+  /** Total liquidity */
+  liquidity?: number;
   /** Open interest */
   openInterest: number;
   /** Open time (Unix timestamp in seconds) */
@@ -100,6 +102,16 @@ export interface MarketsParams extends PaginationParams {
   isInitialized?: boolean;
   /** Sort field for results */
   sort?: SortField;
+  /** Filter by specific market tickers (comma-separated) */
+  tickers?: string;
+  /** Filter markets by event ticker */
+  eventTicker?: string;
+  /** Filter markets by series ticker */
+  seriesTicker?: string;
+  /** Filter markets closing before this timestamp */
+  maxCloseTs?: number;
+  /** Filter markets closing after this timestamp */
+  minCloseTs?: number;
 }
 
 /**

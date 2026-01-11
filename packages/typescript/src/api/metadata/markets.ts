@@ -80,7 +80,12 @@ export class MarketsAPI {
    * @param params - Optional filter parameters
    * @param params.status - Filter by market status ('active', 'closed', etc.)
    * @param params.isInitialized - Filter markets that are initialized
-   * @param params.sort - Sort field (volume, volume24h, liquidity, openInterest, startDate)
+   * @param params.sort - Sort field
+   * @param params.tickers - Filter by specific market tickers (comma-separated)
+   * @param params.eventTicker - Filter markets by event ticker
+   * @param params.seriesTicker - Filter markets by series ticker
+   * @param params.maxCloseTs - Filter markets closing before this timestamp
+   * @param params.minCloseTs - Filter markets closing after this timestamp
    * @param params.limit - Maximum number of markets to return
    * @param params.cursor - Pagination cursor (number of markets to skip)
    * @returns Paginated list of markets

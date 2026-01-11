@@ -77,6 +77,8 @@ export class SearchAPI {
       cursor: params.cursor,
       withNestedMarkets: params.withNestedMarkets,
       withMarketAccounts: params.withMarketAccounts,
+      status: params.status,
+      entityType: params.entityType,
     });
   }
 }

@@ -627,7 +627,7 @@ async function phase8EdgeCases(): Promise<boolean> {
   await runner.test('8.1 Handle empty pagination', async () => {
     const response = await state.dflow.events.getEvents({
       limit: 1,
-      seriesTicker: 'nonexistent_series_xyz',
+      seriesTickers: 'nonexistent_series_xyz',
     });
     runner.log(`Results: ${response.events.length}`);
     return response;
@@ -663,6 +663,51 @@ async function phase8EdgeCases(): Promise<boolean> {
 }
 
 // ============================================================================
+// PHASE 9: NEW SDK FEATURES
+// ============================================================================
+
+async function phase9NewFeatures(): Promise<boolean> {
+  runner.phase('PHASE 9: New SDK Features');
+
+  // 9.1 Search with status and entityType
+  await runner.test('9.1 Search with status and entityType', async () => {
+    const results = await state.dflow.search.search({
+      query: 'bitcoin',
+      limit: 5,
+      status: 'active',
+      entityType: 'events',
+    });
+    runner.log(`Found ${results.events.length} active bitcoin events`);
+    return results;
+  });
+
+  // 9.2 Markets with ticker filter (comma separated)
+  if (state.sampleMarket) {
+    await runner.test('9.2 Markets with ticker filter', async () => {
+      const results = await state.dflow.markets.getMarkets({
+        tickers: state.sampleMarket!.ticker,
+      });
+      assertArray(results.markets, 'Markets');
+      runner.log(`Found ${results.markets.length} markets`);
+      return results;
+    });
+  }
+
+  // 9.3 Markets by event ticker
+  if (state.sampleEvent) {
+    await runner.test('9.3 Markets by event ticker', async () => {
+      const results = await state.dflow.markets.getMarkets({
+        eventTicker: state.sampleEvent!.ticker,
+      });
+      runner.log(`Found ${results.markets.length} markets for event ${state.sampleEvent!.ticker}`);
+      return results;
+    });
+  }
+
+  return true;
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -681,6 +726,7 @@ async function main() {
     await phase6WebSocket();
     await phase7ErrorHandling();
     await phase8EdgeCases();
+    await phase9NewFeatures();
 
     runner.summary();
     process.exit(runner.hasFailures() ? 1 : 0);

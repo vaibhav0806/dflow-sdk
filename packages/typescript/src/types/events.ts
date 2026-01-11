@@ -41,6 +41,8 @@ export interface Event {
   strikeDate?: number | null;
   /** Strike period description (optional) */
   strikePeriod?: string | null;
+  /** Whether the markets in this event are mutually exclusive */
+  mutuallyExclusive?: boolean | null;
   /** Total volume traded (optional) */
   volume?: number | null;
   /** 24-hour trading volume (optional) */

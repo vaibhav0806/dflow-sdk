@@ -1,6 +1,13 @@
 import type { Event } from './events.js';
 import type { SortField, SortOrder } from './common.js';
 
+import type { MarketStatus } from './markets.js';
+
+/**
+ * Entity type for search results.
+ */
+export type SearchEntityType = 'events' | 'markets' | 'series';
+
 /**
  * Parameters for searching events.
  */
@@ -19,6 +26,10 @@ export interface SearchParams {
   withNestedMarkets?: boolean;
   /** Include market account information (settlement mints and redemption status) */
   withMarketAccounts?: boolean;
+  /** Filter by status */
+  status?: MarketStatus;
+  /** Type of entity to search for */
+  entityType?: SearchEntityType;
 }
 
 /**
