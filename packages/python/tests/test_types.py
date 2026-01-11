@@ -36,68 +36,81 @@ class TestMarketTypes:
         assert market.event_ticker == "BTCD-25DEC0313"
         assert market.status == "active"
         assert market.result == ""
+        assert market.market_type == "binary"
+        assert market.yes_sub_title == "YES"
+        assert market.no_sub_title == "NO"
+        assert market.can_close_early is False
+        assert market.rules_primary is not None
         assert market.yes_bid == "0.6500"
         assert market.no_bid == "0.3400"
         assert market.yes_price == 0.65  # computed from yes_bid
-        assert market.no_price == 0.34   # computed from no_bid
+        assert market.no_price == 0.34  # computed from no_bid
         assert market.volume == 1000000
         assert "usdc" in market.accounts
         assert market.accounts["usdc"].yes_mint == "YesMint123456789abcdefghijklmnopqrstuvwxyz"
 
-    def test_market_optional_fields(self):
-        """Test Market with minimal required fields."""
+    def test_market_required_fields(self):
+        """Test Market with all required fields."""
         data = {
             "ticker": "TEST-MARKET",
             "title": "Test Market",
+            "subtitle": "Test subtitle",
             "eventTicker": "TEST-EVENT",
             "status": "active",
             "result": "",
+            "marketType": "binary",
+            "yesSubTitle": "YES",
+            "noSubTitle": "NO",
+            "canCloseEarly": False,
+            "rulesPrimary": "Rules for this market",
+            "volume": 0,
+            "openInterest": 0,
+            "openTime": 1704067200,
+            "closeTime": 1735689600,
+            "expirationTime": 1735689600,
             "accounts": {},
         }
         market = Market.model_validate(data)
         assert market.ticker == "TEST-MARKET"
-        assert market.yes_price is None
-        assert market.volume is None
+        assert market.yes_price is None  # no bid/ask set
+        assert market.rules == "Rules for this market"  # backwards compat property
 
     def test_market_with_integer_timestamps(self):
         """Test Market parsing with integer timestamps (as returned by real API)."""
         data = {
             "ticker": "TEST-MARKET",
             "title": "Test Market",
+            "subtitle": "Test subtitle",
             "eventTicker": "TEST-EVENT",
             "status": "active",
             "result": "",
-            "accounts": {},
+            "marketType": "binary",
+            "yesSubTitle": "YES",
+            "noSubTitle": "NO",
+            "canCloseEarly": False,
+            "rulesPrimary": "Rules",
+            "volume": 0,
+            "openInterest": 0,
             "openTime": 1731524400,
             "closeTime": 1774969200,
             "expirationTime": 1774969200,
+            "accounts": {},
         }
         market = Market.model_validate(data)
         assert market.open_time == 1731524400
         assert market.close_time == 1774969200
         assert market.expiration_time == 1774969200
 
-    def test_market_account_pending_status(self):
-        """Test MarketAccount with 'pending' redemption status."""
+    def test_market_account_closed_status(self):
+        """Test MarketAccount with 'closed' redemption status."""
         data = {
             "yesMint": "YesMint123",
             "noMint": "NoMint123",
             "marketLedger": "Ledger123",
-            "redemptionStatus": "pending",
+            "redemptionStatus": "closed",
         }
         account = MarketAccount.model_validate(data)
-        assert account.redemption_status == "pending"
-
-    def test_market_account_null_status(self):
-        """Test MarketAccount with null redemption status."""
-        data = {
-            "yesMint": "YesMint123",
-            "noMint": "NoMint123",
-            "marketLedger": "Ledger123",
-            "redemptionStatus": None,
-        }
-        account = MarketAccount.model_validate(data)
-        assert account.redemption_status is None
+        assert account.redemption_status == "closed"
 
 
 class TestEventTypes:
@@ -109,7 +122,6 @@ class TestEventTypes:
         assert event.ticker == "BTCD-25DEC0313"
         assert event.title == "Bitcoin Price on December 31, 2025"
         assert event.series_ticker == "KXBTC"
-        assert event.category == "crypto"
         assert event.mutually_exclusive is True
 
     def test_event_with_markets(self, mock_event_data, mock_market_data):
@@ -131,10 +143,10 @@ class TestOrderbookTypes:
         assert level.quantity == 1000
 
     def test_orderbook_parsing(self, mock_orderbook_data):
-        """Test Orderbook parsing (new API format)."""
+        """Test Orderbook parsing (actual API format with dicts)."""
         orderbook = Orderbook.model_validate(mock_orderbook_data)
         assert orderbook.sequence == 1704067200000
-        assert orderbook.timestamp == 1704067200000  # backwards compat
+        assert orderbook.timestamp == 1704067200000  # backwards compat property
         assert len(orderbook.yes_bids) == 2
         assert len(orderbook.no_bids) == 2
         # Test the helper methods
@@ -142,6 +154,8 @@ class TestOrderbookTypes:
         assert len(yes_levels) == 2
         assert yes_levels[0].price == 0.65  # sorted descending
         assert yes_levels[0].quantity == 1000
+        # Test backwards-compatible property
+        assert orderbook.yes_bid[0].price == 0.65
 
 
 class TestTradeTypes:

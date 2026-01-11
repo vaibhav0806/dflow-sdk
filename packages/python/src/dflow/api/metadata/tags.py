@@ -1,8 +1,6 @@
 """Tags API for DFlow SDK."""
 
-from typing import cast
-
-from dflow.types import CategoryTags
+from dflow.types import CategoryTags, TagsByCategoriesResponse
 from dflow.utils.http import HttpClient
 
 
@@ -15,8 +13,7 @@ class TagsAPI:
     Example:
         >>> dflow = DFlowClient()
         >>> tags = dflow.tags.get_tags_by_categories()
-        >>> for category, tag_list in tags.items():
-        ...     print(f"{category}: {', '.join(tag_list)}")
+        >>> print(list(tags.keys()))  # List of categories
     """
 
     def __init__(self, http: HttpClient):
@@ -25,12 +22,16 @@ class TagsAPI:
     def get_tags_by_categories(self) -> CategoryTags:
         """Get all tags organized by category.
 
+        Returns a mapping of series categories to their associated tags.
+
         Returns:
-            Tags grouped by their categories (dict mapping category to list of tags)
+            Tags grouped by their categories
 
         Example:
             >>> tags = dflow.tags.get_tags_by_categories()
             >>> for category, tag_list in tags.items():
             ...     print(f"{category}: {', '.join(tag_list)}")
         """
-        return cast(CategoryTags, self._http.get("/tags_by_categories"))
+        data = self._http.get("/tags_by_categories")
+        response = TagsByCategoriesResponse.model_validate(data)
+        return response.tags_by_categories

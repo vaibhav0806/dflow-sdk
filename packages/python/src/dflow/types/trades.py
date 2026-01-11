@@ -4,22 +4,32 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-TradeSide = Literal["yes", "no"]
-TradeAction = Literal["buy", "sell"]
+# Taker side of a trade - which side took the trade.
+TakerSide = Literal["yes", "no"]
 
 
 class Trade(BaseModel):
-    """Historical trade data."""
+    """Trade data returned from the API."""
 
+    # Unique trade identifier
     trade_id: str = Field(alias="tradeId")
+    # Market ticker this trade occurred in
     ticker: str
-    price: int  # Price in cents
-    count: int  # Quantity
+    # Which side (yes/no) the taker was on
+    taker_side: TakerSide = Field(alias="takerSide")
+    # Trade price (in cents, 0-100)
+    price: int
+    # YES price (in cents, 0-100)
     yes_price: int = Field(alias="yesPrice")
+    # NO price (in cents, 0-100)
     no_price: int = Field(alias="noPrice")
+    # YES price in dollars as string
     yes_price_dollars: str = Field(alias="yesPriceDollars")
+    # NO price in dollars as string
     no_price_dollars: str = Field(alias="noPriceDollars")
-    taker_side: TradeSide = Field(alias="takerSide")
+    # Number of contracts traded
+    count: int
+    # Creation timestamp (Unix timestamp in seconds)
     created_time: int = Field(alias="createdTime")
 
     model_config = {"populate_by_name": True}
@@ -36,7 +46,7 @@ class Trade(BaseModel):
         return self.ticker
 
     @property
-    def side(self) -> TradeSide:
+    def side(self) -> TakerSide:
         """Alias for taker_side for backwards compatibility."""
         return self.taker_side
 
@@ -51,8 +61,47 @@ class Trade(BaseModel):
         return self.created_time
 
 
-class TradesResponse(BaseModel):
-    """Response from trades endpoint."""
+class TradesParams(BaseModel):
+    """Parameters for fetching trades."""
 
-    cursor: str | int | None = None
+    # Maximum number of trades to return (1-1000, default 100)
+    limit: int | None = None
+    # Pagination cursor (trade ID) to start from
+    cursor: str | None = None
+    # Filter by market ticker
+    ticker: str | None = None
+    # Filter trades after this Unix timestamp
+    min_ts: int | None = Field(default=None, alias="minTs")
+    # Filter trades before this Unix timestamp
+    max_ts: int | None = Field(default=None, alias="maxTs")
+
+    model_config = {"populate_by_name": True}
+
+
+class TradesByMintParams(BaseModel):
+    """Parameters for fetching trades by mint (excluding ticker since it's derived from mint)."""
+
+    # Maximum number of trades to return (1-1000, default 100)
+    limit: int | None = None
+    # Pagination cursor (trade ID) to start from
+    cursor: str | None = None
+    # Filter trades after this Unix timestamp
+    min_ts: int | None = Field(default=None, alias="minTs")
+    # Filter trades before this Unix timestamp
+    max_ts: int | None = Field(default=None, alias="maxTs")
+
+    model_config = {"populate_by_name": True}
+
+
+class TradesResponse(BaseModel):
+    """Response from the trades endpoint."""
+
+    # Pagination cursor for next page (trade ID)
+    cursor: str | None = None
+    # Array of trades
     trades: list[Trade]
+
+
+# Legacy type aliases for backwards compatibility
+TradeSide = TakerSide
+TradeAction = Literal["buy", "sell"]

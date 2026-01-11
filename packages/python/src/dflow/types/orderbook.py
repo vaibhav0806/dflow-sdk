@@ -27,14 +27,18 @@ class Orderbook(BaseModel):
         """Convert yes_bids dict to list of OrderbookLevel objects."""
         return [
             OrderbookLevel(price=float(price), quantity=float(qty))
-            for price, qty in sorted(self.yes_bids.items(), key=lambda x: float(x[0]), reverse=True)
+            for price, qty in sorted(
+                self.yes_bids.items(), key=lambda x: float(x[0]), reverse=True
+            )
         ]
 
     def get_no_levels(self) -> list[OrderbookLevel]:
         """Convert no_bids dict to list of OrderbookLevel objects."""
         return [
             OrderbookLevel(price=float(price), quantity=float(qty))
-            for price, qty in sorted(self.no_bids.items(), key=lambda x: float(x[0]), reverse=True)
+            for price, qty in sorted(
+                self.no_bids.items(), key=lambda x: float(x[0]), reverse=True
+            )
         ]
 
     @property
@@ -51,3 +55,8 @@ class Orderbook(BaseModel):
     def timestamp(self) -> int:
         """Backwards-compatible alias for sequence."""
         return self.sequence
+
+    @property
+    def market_ticker(self) -> str:
+        """Market ticker (not available in current API format)."""
+        return ""

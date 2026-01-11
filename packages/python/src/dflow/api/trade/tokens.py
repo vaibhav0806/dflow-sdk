@@ -1,19 +1,7 @@
 """Tokens API for DFlow SDK."""
 
-from typing import cast
-
+from dflow.types import Token, TokenWithDecimals
 from dflow.utils.http import HttpClient
-
-
-class TokenMintWithDecimals:
-    """Token mint address with decimal information."""
-
-    def __init__(self, mint: str, decimals: int):
-        self.mint = mint
-        self.decimals = decimals
-
-    def __repr__(self) -> str:
-        return f"TokenMintWithDecimals(mint='{self.mint}', decimals={self.decimals})"
 
 
 class TokensAPI:
@@ -24,39 +12,46 @@ class TokensAPI:
 
     Example:
         >>> dflow = DFlowClient()
+        >>>
+        >>> # Get all available tokens
         >>> tokens = dflow.tokens.get_tokens()
-        >>> for mint in tokens[:5]:
-        ...     print(f"Mint: {mint}")
+        >>>
+        >>> # Get tokens with decimal information
+        >>> tokens_with_decimals = dflow.tokens.get_tokens_with_decimals()
     """
 
     def __init__(self, http: HttpClient):
         self._http = http
 
-    def get_tokens(self) -> list[str]:
-        """Get all available token mint addresses for trading.
+    def get_tokens(self) -> list[Token]:
+        """Get all available tokens for trading.
 
         Returns:
-            List of token mint addresses (Solana public keys)
+            Array of token information
 
         Example:
-            >>> mints = dflow.tokens.get_tokens()
-            >>> print(f"Found {len(mints)} tokens")
+            >>> tokens = dflow.tokens.get_tokens()
+            >>> for token in tokens:
+            ...     print(f"{token.symbol}: {token.mint}")
         """
         data = self._http.get("/tokens")
-        return cast(list[str], data)
+        return [Token.model_validate(t) for t in data]
 
-    def get_tokens_with_decimals(self) -> list[TokenMintWithDecimals]:
+    def get_tokens_with_decimals(self) -> list[TokenWithDecimals]:
         """Get all available tokens with decimal information.
 
-        Note: The API returns a list of [mint, decimals] tuples.
+        Includes the number of decimal places for each token,
+        useful for formatting amounts correctly.
 
         Returns:
-            List of TokenMintWithDecimals objects
+            Array of tokens with decimal information
 
         Example:
             >>> tokens = dflow.tokens.get_tokens_with_decimals()
-            >>> for token in tokens[:5]:
-            ...     print(f"{token.mint}: {token.decimals} decimals")
+            >>> for token in tokens:
+            ...     print(f"{token.symbol}: {token.decimals} decimals")
+            ...     # Convert 1 token to base units
+            ...     base_units = 1 * (10 ** token.decimals)
         """
         data = self._http.get("/tokens-with-decimals")
-        return [TokenMintWithDecimals(mint=item[0], decimals=item[1]) for item in data]
+        return [TokenWithDecimals.model_validate(t) for t in data]

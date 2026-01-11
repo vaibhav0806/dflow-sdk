@@ -14,12 +14,15 @@ def mock_market_data():
         "marketType": "binary",
         "status": "active",
         "result": "",
+        "yesSubTitle": "YES",
+        "noSubTitle": "NO",
+        "canCloseEarly": False,
+        "rulesPrimary": "This market will resolve to Yes if Bitcoin is above $92,749.99 on December 31, 2025.",
         "yesBid": "0.6500",
         "yesAsk": "0.6600",
         "noBid": "0.3400",
         "noAsk": "0.3500",
         "volume": 1000000,
-        "volume24h": 50000,
         "openInterest": 250000,
         "liquidity": 100000,
         "openTime": 1704067200,
@@ -30,7 +33,6 @@ def mock_market_data():
                 "yesMint": "YesMint123456789abcdefghijklmnopqrstuvwxyz",
                 "noMint": "NoMint123456789abcdefghijklmnopqrstuvwxyz",
                 "marketLedger": "Ledger123456789abcdefghijklmnopqrstuvwxyz",
-                "isInitialized": True,
                 "redemptionStatus": "closed",
             }
         },
@@ -45,7 +47,6 @@ def mock_event_data():
         "title": "Bitcoin Price on December 31, 2025",
         "subtitle": "Daily Bitcoin price prediction",
         "seriesTicker": "KXBTC",
-        "category": "crypto",
         "mutuallyExclusive": True,
     }
 
@@ -86,4 +87,13 @@ def mock_trade_data():
         "noPriceDollars": "0.35",
         "takerSide": "yes",
         "createdTime": 1704067200,
+    }
+
+
+@pytest.fixture
+def mock_search_data(mock_event_data):
+    """Sample search result data for testing."""
+    return {
+        "cursor": 0,
+        "events": [mock_event_data],
     }

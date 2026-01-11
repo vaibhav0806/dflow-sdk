@@ -8,8 +8,14 @@ from pydantic import BaseModel
 class PaginationParams(BaseModel):
     """Parameters for paginated API requests."""
 
-    cursor: str | None = None
+    cursor: int | None = None
     limit: int | None = None
+
+
+class PaginatedResponse(BaseModel):
+    """Base class for paginated responses."""
+
+    cursor: int | None = None
 
 
 class Candlestick(BaseModel):
@@ -23,4 +29,31 @@ class Candlestick(BaseModel):
     volume: float
 
 
-CandlestickPeriod = Literal["1m", "5m", "15m", "1h", "4h", "1d"]
+# Period interval in minutes for candlesticks.
+# Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day)
+CandlestickPeriodInterval = Literal[1, 60, 1440]
+
+
+class CandlestickParams(BaseModel):
+    """Parameters for fetching candlestick data."""
+
+    # Start timestamp (Unix timestamp in seconds)
+    start_ts: int
+    # End timestamp (Unix timestamp in seconds)
+    end_ts: int
+    # Time period length of each candlestick in minutes (1, 60, or 1440)
+    period_interval: CandlestickPeriodInterval
+
+
+# Sort options for events and markets.
+SortField = Literal[
+    "volume",
+    "volume_24h",
+    "liquidity",
+    "open_interest",
+    "start_date",
+    "score",
+]
+
+# Sort order direction.
+SortOrder = Literal["asc", "desc"]

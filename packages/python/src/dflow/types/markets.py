@@ -9,62 +9,52 @@ MarketStatus = Literal[
 ]
 MarketResult = Literal["yes", "no", ""]
 RedemptionStatus = Literal["open", "closed", "pending"]
-MarketType = Literal["binary", "scalar"]
 
 
 class MarketAccount(BaseModel):
-    """Market account information for a specific settlement token."""
+    """Market account information including mint addresses and redemption status."""
 
     yes_mint: str = Field(alias="yesMint")
     no_mint: str = Field(alias="noMint")
     market_ledger: str = Field(alias="marketLedger")
-    is_initialized: bool = Field(default=False, alias="isInitialized")
-    redemption_status: RedemptionStatus | None = Field(default=None, alias="redemptionStatus")
+    redemption_status: RedemptionStatus = Field(alias="redemptionStatus")
     scalar_outcome_pct: int | None = Field(default=None, alias="scalarOutcomePct")
 
     model_config = {"populate_by_name": True}
 
 
 class Market(BaseModel):
-    """Prediction market data."""
+    """Prediction market data.
+
+    Represents a single trading instrument within an event.
+    """
 
     ticker: str
     title: str
-    subtitle: str | None = None
+    subtitle: str
     event_ticker: str = Field(alias="eventTicker")
-    market_type: MarketType | None = Field(default=None, alias="marketType")
     status: MarketStatus
     result: MarketResult
-
-    # Price fields - API returns bid/ask as strings like "0.3500"
-    yes_bid: str | None = Field(default=None, alias="yesBid")
-    yes_ask: str | None = Field(default=None, alias="yesAsk")
-    no_bid: str | None = Field(default=None, alias="noBid")
-    no_ask: str | None = Field(default=None, alias="noAsk")
-
-    # Subtitles
-    yes_sub_title: str | None = Field(default=None, alias="yesSubTitle")
-    no_sub_title: str | None = Field(default=None, alias="noSubTitle")
-
-    # Volume and interest
-    volume: float | None = None
-    volume_24h: float | None = Field(default=None, alias="volume24h")
-    open_interest: float | None = Field(default=None, alias="openInterest")
+    market_type: str = Field(alias="marketType")
+    yes_sub_title: str = Field(alias="yesSubTitle")
+    no_sub_title: str = Field(alias="noSubTitle")
+    can_close_early: bool = Field(alias="canCloseEarly")
+    rules_primary: str = Field(alias="rulesPrimary")
+    volume: float
     liquidity: float | None = None
-
-    # Timestamps
-    open_time: str | int | None = Field(default=None, alias="openTime")
-    close_time: str | int | None = Field(default=None, alias="closeTime")
-    expiration_time: str | int | None = Field(default=None, alias="expirationTime")
-
-    # Rules
-    rules_primary: str | None = Field(default=None, alias="rulesPrimary")
-    rules_secondary: str | None = Field(default=None, alias="rulesSecondary")
-    can_close_early: bool | None = Field(default=None, alias="canCloseEarly")
-    early_close_condition: str | None = Field(default=None, alias="earlyCloseCondition")
-
-    # Accounts
+    open_interest: float = Field(alias="openInterest")
+    open_time: int = Field(alias="openTime")
+    close_time: int = Field(alias="closeTime")
+    expiration_time: int = Field(alias="expirationTime")
     accounts: dict[str, MarketAccount]
+
+    # Optional fields
+    rules_secondary: str | None = Field(default=None, alias="rulesSecondary")
+    early_close_condition: str | None = Field(default=None, alias="earlyCloseCondition")
+    yes_ask: str | None = Field(default=None, alias="yesAsk")
+    yes_bid: str | None = Field(default=None, alias="yesBid")
+    no_ask: str | None = Field(default=None, alias="noAsk")
+    no_bid: str | None = Field(default=None, alias="noBid")
 
     model_config = {"populate_by_name": True}
 
@@ -84,15 +74,42 @@ class Market(BaseModel):
         return None
 
     @property
-    def rules(self) -> str | None:
+    def rules(self) -> str:
         """Backwards-compatible alias for rules_primary."""
         return self.rules_primary
+
+
+class MarketsParams(BaseModel):
+    """Parameters for fetching markets."""
+
+    # Filter markets by status
+    status: MarketStatus | None = None
+    # Filter markets that are initialized (have a corresponding market ledger)
+    is_initialized: bool | None = Field(default=None, alias="isInitialized")
+    # Sort field for results
+    sort: str | None = None
+    # Filter by specific market tickers (comma-separated)
+    tickers: str | None = None
+    # Filter markets by event ticker
+    event_ticker: str | None = Field(default=None, alias="eventTicker")
+    # Filter markets by series ticker
+    series_ticker: str | None = Field(default=None, alias="seriesTicker")
+    # Filter markets closing before this timestamp
+    max_close_ts: int | None = Field(default=None, alias="maxCloseTs")
+    # Filter markets closing after this timestamp
+    min_close_ts: int | None = Field(default=None, alias="minCloseTs")
+    # Pagination cursor
+    cursor: int | None = None
+    # Limit
+    limit: int | None = None
+
+    model_config = {"populate_by_name": True}
 
 
 class MarketsResponse(BaseModel):
     """Response from markets list endpoint."""
 
-    cursor: str | int | None = None
+    cursor: int | None = None
     markets: list[Market]
 
 
@@ -107,11 +124,29 @@ class MarketsBatchResponse(BaseModel):
     """Response from batch markets endpoint."""
 
     markets: list[Market]
+    cursor: int | None = None
+
+
+class OutcomeMintsParams(BaseModel):
+    """Parameters for fetching outcome mints."""
+
+    # Minimum close timestamp (Unix timestamp in seconds).
+    # Only markets with close_time >= minCloseTs will be included.
+    min_close_ts: int | None = Field(default=None, alias="minCloseTs")
+
+    model_config = {"populate_by_name": True}
+
+
+class OutcomeMintsResponse(BaseModel):
+    """Response from the outcome mints endpoint."""
+
+    mints: list[str]
 
 
 class FilterOutcomeMintsParams(BaseModel):
     """Parameters for filtering outcome mints."""
 
+    # List of token addresses to filter (max 200)
     addresses: list[str]
 
 

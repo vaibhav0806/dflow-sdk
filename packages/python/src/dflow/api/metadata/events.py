@@ -1,6 +1,16 @@
 """Events API for DFlow SDK."""
 
-from dflow.types import Candlestick, Event, EventsResponse, ForecastHistory
+from dflow.types import (
+    Candlestick,
+    CandlestickParams,
+    Event,
+    EventsParams,
+    EventsResponse,
+    ForecastHistory,
+    ForecastHistoryParams,
+    MarketStatus,
+    SortField,
+)
 from dflow.utils.http import HttpClient
 
 
@@ -28,7 +38,7 @@ class EventsAPI:
         """Get a single event by its ID.
 
         Args:
-            event_id: The unique identifier of the event
+            event_id: The unique identifier of the event (event ticker)
             with_nested_markets: If True, includes all markets within the event
 
         Returns:
@@ -50,30 +60,37 @@ class EventsAPI:
 
     def get_events(
         self,
-        status: str | None = None,
-        series_ticker: str | None = None,
+        status: MarketStatus | None = None,
+        series_tickers: str | None = None,
         with_nested_markets: bool | None = None,
+        is_initialized: bool | None = None,
+        sort: SortField | None = None,
         limit: int | None = None,
-        cursor: str | None = None,
+        cursor: int | None = None,
     ) -> EventsResponse:
         """List events with optional filtering.
 
         Args:
             status: Filter by event status ('active', 'closed', etc.)
-            series_ticker: Filter by series ticker (e.g., 'KXBTC')
+            series_tickers: Filter by series tickers (comma-separated, max 25)
             with_nested_markets: If True, includes markets within each event
+            is_initialized: Filter events that are initialized
+            sort: Sort field (volume, volume_24h, liquidity, open_interest, start_date)
             limit: Maximum number of events to return
-            cursor: Pagination cursor from previous response
+            cursor: Pagination cursor (number of events to skip)
 
         Returns:
             Paginated list of events
 
         Example:
-            >>> # Get all active events
-            >>> response = dflow.events.get_events(status="active")
+            >>> # Get all active events sorted by volume
+            >>> response = dflow.events.get_events(status="active", sort="volume")
             >>>
-            >>> # Get events for a specific series
-            >>> response = dflow.events.get_events(series_ticker="KXBTC", limit=50)
+            >>> # Get events for specific series
+            >>> response = dflow.events.get_events(series_tickers="KXBTC,KXETH", limit=50)
+            >>>
+            >>> # Get initialized events only
+            >>> response = dflow.events.get_events(is_initialized=True)
             >>>
             >>> # Paginate through results
             >>> next_page = dflow.events.get_events(cursor=response.cursor)
@@ -82,8 +99,10 @@ class EventsAPI:
             "/events",
             {
                 "status": status,
-                "seriesTicker": series_ticker,
+                "seriesTickers": series_tickers,
                 "withNestedMarkets": with_nested_markets,
+                "isInitialized": is_initialized,
+                "sort": sort,
                 "limit": limit,
                 "cursor": cursor,
             },
@@ -91,60 +110,124 @@ class EventsAPI:
         return EventsResponse.model_validate(data)
 
     def get_event_forecast_history(
-        self, series_ticker: str, event_id: str
+        self,
+        series_ticker: str,
+        event_id: str,
+        params: ForecastHistoryParams,
     ) -> ForecastHistory:
         """Get forecast percentile history for an event.
 
-        Returns historical forecast data showing how predictions have changed over time.
+        Returns historical raw and formatted forecast numbers for an event at specific percentiles.
+        This endpoint relays the response directly from the Kalshi API.
 
         Args:
             series_ticker: The series ticker (e.g., 'KXBTC')
             event_id: The event identifier within the series
+            params: Required parameters for the forecast query
 
         Returns:
             Forecast history with percentile data points
 
         Example:
-            >>> history = dflow.events.get_event_forecast_history("KXBTC", "event-123")
-            >>> print(history.history)
+            >>> from dflow.types import ForecastHistoryParams
+            >>> history = dflow.events.get_event_forecast_history(
+            ...     "KXBTC",
+            ...     "event-123",
+            ...     ForecastHistoryParams(
+            ...         percentiles="2500,5000,7500",  # 25th, 50th, 75th percentiles
+            ...         start_ts=1704067200,
+            ...         end_ts=1704153600,
+            ...         period_interval=60,
+            ...     )
+            ... )
         """
         data = self._http.get(
-            f"/event/{series_ticker}/{event_id}/forecast_percentile_history"
+            f"/event/{series_ticker}/{event_id}/forecast_percentile_history",
+            {
+                "percentiles": params.percentiles,
+                "startTs": params.start_ts,
+                "endTs": params.end_ts,
+                "periodInterval": params.period_interval,
+            },
         )
         return ForecastHistory.model_validate(data)
 
-    def get_event_forecast_by_mint(self, mint_address: str) -> ForecastHistory:
+    def get_event_forecast_by_mint(
+        self,
+        mint_address: str,
+        params: ForecastHistoryParams,
+    ) -> ForecastHistory:
         """Get forecast percentile history for an event by its mint address.
 
-        Alternative to get_event_forecast_history when you have the mint address
-        instead of series ticker and event ID.
+        Looks up the event from a market mint address and returns historical forecast data.
+        This endpoint relays the response directly from the Kalshi API.
 
         Args:
-            mint_address: The Solana mint address of the event's outcome token
+            mint_address: Any mint address associated with the market (ledger or outcome mint)
+            params: Required parameters for the forecast query
 
         Returns:
             Forecast history with percentile data points
+
+        Example:
+            >>> from dflow.types import ForecastHistoryParams
+            >>> history = dflow.events.get_event_forecast_by_mint(
+            ...     "EPjFWdd5...",
+            ...     ForecastHistoryParams(
+            ...         percentiles="5000",  # 50th percentile (median)
+            ...         start_ts=1704067200,
+            ...         end_ts=1704153600,
+            ...         period_interval=1440,
+            ...     )
+            ... )
         """
         data = self._http.get(
-            f"/event/by-mint/{mint_address}/forecast_percentile_history"
+            f"/event/by-mint/{mint_address}/forecast_percentile_history",
+            {
+                "percentiles": params.percentiles,
+                "startTs": params.start_ts,
+                "endTs": params.end_ts,
+                "periodInterval": params.period_interval,
+            },
         )
         return ForecastHistory.model_validate(data)
 
-    def get_event_candlesticks(self, ticker: str) -> list[Candlestick]:
+    def get_event_candlesticks(
+        self,
+        ticker: str,
+        params: CandlestickParams,
+    ) -> list[Candlestick]:
         """Get OHLCV candlestick data for an event.
 
-        Returns price history in candlestick format for charting.
+        Relays event candlesticks from the Kalshi API. Automatically resolves
+        the series_ticker from the event ticker.
 
         Args:
             ticker: The event ticker
+            params: Required candlestick parameters
 
         Returns:
             Array of candlestick data points
 
         Example:
-            >>> candles = dflow.events.get_event_candlesticks("BTCD-25DEC0313")
+            >>> from dflow.types import CandlestickParams
+            >>> candles = dflow.events.get_event_candlesticks(
+            ...     "BTCD-25DEC0313",
+            ...     CandlestickParams(
+            ...         start_ts=1704067200,
+            ...         end_ts=1704153600,
+            ...         period_interval=60,
+            ...     )
+            ... )
             >>> for c in candles:
             ...     print(f"O: {c.open}, H: {c.high}, L: {c.low}, C: {c.close}")
         """
-        data = self._http.get(f"/event/{ticker}/candlesticks")
+        data = self._http.get(
+            f"/event/{ticker}/candlesticks",
+            {
+                "startTs": params.start_ts,
+                "endTs": params.end_ts,
+                "periodInterval": params.period_interval,
+            },
+        )
         return [Candlestick.model_validate(c) for c in data.get("candlesticks", [])]

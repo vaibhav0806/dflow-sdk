@@ -8,12 +8,13 @@ class TradesAPI:
     """API for retrieving historical trade data.
 
     Access past trades for markets to analyze trading activity and price history.
+    Relays requests directly to Kalshi API.
 
     Example:
         >>> dflow = DFlowClient()
-        >>> response = dflow.trades.get_trades(market_ticker="BTCD-25DEC0313-T92749.99")
+        >>> response = dflow.trades.get_trades(ticker="BTCD-25DEC0313-T92749.99", limit=100)
         >>> for trade in response.trades:
-        ...     print(f"{trade.side} {trade.quantity} @ {trade.price}")
+        ...     print(f"{trade.taker_side} {trade.count} @ {trade.price}")
     """
 
     def __init__(self, http: HttpClient):
@@ -21,20 +22,23 @@ class TradesAPI:
 
     def get_trades(
         self,
-        market_ticker: str | None = None,
-        start_timestamp: str | None = None,
-        end_timestamp: str | None = None,
+        ticker: str | None = None,
+        min_ts: int | None = None,
+        max_ts: int | None = None,
         limit: int | None = None,
         cursor: str | None = None,
     ) -> TradesResponse:
         """Get historical trades with optional filtering.
 
+        Returns a paginated list of all trades. Can be filtered by market ticker
+        and timestamp range.
+
         Args:
-            market_ticker: Filter by market ticker
-            start_timestamp: Filter trades after this timestamp
-            end_timestamp: Filter trades before this timestamp
-            limit: Maximum number of trades to return
-            cursor: Pagination cursor from previous response
+            ticker: Filter by market ticker
+            min_ts: Filter trades after this Unix timestamp
+            max_ts: Filter trades before this Unix timestamp
+            limit: Maximum number of trades to return (1-1000, default 100)
+            cursor: Pagination cursor (trade ID) to start from
 
         Returns:
             Paginated list of trades
@@ -42,8 +46,14 @@ class TradesAPI:
         Example:
             >>> # Get recent trades for a market
             >>> response = dflow.trades.get_trades(
-            ...     market_ticker="BTCD-25DEC0313-T92749.99",
+            ...     ticker="BTCD-25DEC0313-T92749.99",
             ...     limit=100,
+            ... )
+            >>>
+            >>> # Filter by timestamp range
+            >>> response = dflow.trades.get_trades(
+            ...     min_ts=1704067200,  # Jan 1, 2024
+            ...     max_ts=1704153600,  # Jan 2, 2024
             ... )
             >>>
             >>> # Paginate through results
@@ -52,9 +62,9 @@ class TradesAPI:
         data = self._http.get(
             "/trades",
             {
-                "marketTicker": market_ticker,
-                "startTimestamp": start_timestamp,
-                "endTimestamp": end_timestamp,
+                "ticker": ticker,
+                "minTs": min_ts,
+                "maxTs": max_ts,
                 "limit": limit,
                 "cursor": cursor,
             },
@@ -64,30 +74,41 @@ class TradesAPI:
     def get_trades_by_mint(
         self,
         mint_address: str,
-        start_timestamp: str | None = None,
-        end_timestamp: str | None = None,
+        min_ts: int | None = None,
+        max_ts: int | None = None,
         limit: int | None = None,
         cursor: str | None = None,
     ) -> TradesResponse:
         """Get trades for a market by mint address.
 
-        Alternative to get_trades when you have the mint address.
+        Looks up the market ticker from a mint address, then fetches trades from Kalshi.
+        Returns a paginated list of trades. Can be filtered by timestamp range.
 
         Args:
-            mint_address: The Solana mint address of the market's outcome token
-            start_timestamp: Filter trades after this timestamp
-            end_timestamp: Filter trades before this timestamp
-            limit: Maximum number of trades to return
-            cursor: Pagination cursor from previous response
+            mint_address: Mint address (ledger or outcome mint)
+            min_ts: Filter trades after this Unix timestamp
+            max_ts: Filter trades before this Unix timestamp
+            limit: Maximum number of trades to return (1-1000, default 100)
+            cursor: Pagination cursor (trade ID) to start from
 
         Returns:
             Paginated list of trades
+
+        Example:
+            >>> response = dflow.trades.get_trades_by_mint("EPjFWdd5...", limit=50)
+            >>>
+            >>> # Filter by timestamp
+            >>> import time
+            >>> response = dflow.trades.get_trades_by_mint(
+            ...     "EPjFWdd5...",
+            ...     min_ts=int(time.time()) - 86400,  # Last 24 hours
+            ... )
         """
         data = self._http.get(
             f"/trades/by-mint/{mint_address}",
             {
-                "startTimestamp": start_timestamp,
-                "endTimestamp": end_timestamp,
+                "minTs": min_ts,
+                "maxTs": max_ts,
                 "limit": limit,
                 "cursor": cursor,
             },
