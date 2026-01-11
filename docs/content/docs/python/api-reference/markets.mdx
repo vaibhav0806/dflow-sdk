@@ -24,12 +24,16 @@ Fetch multiple markets with optional filtering.
 
 ```python
 def get_markets(
-    status: str | None = None,
+    status: MarketStatus | None = None,
+    is_initialized: bool | None = None,
+    sort: SortField | None = None,
+    tickers: str | None = None,
     event_ticker: str | None = None,
     series_ticker: str | None = None,
-    tickers: list[str] | None = None,
-    cursor: str | None = None,
-    limit: int | None = None
+    max_close_ts: int | None = None,
+    min_close_ts: int | None = None,
+    limit: int | None = None,
+    cursor: int | None = None,
 ) -> MarketsResponse
 ```
 
@@ -37,30 +41,37 @@ def get_markets(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `status` | `str \| None` | Filter by status: "active", "closed", "settled" |
+| `status` | `str \| None` | Filter by status: `"active"`, `"closed"`, `"determined"`, `"finalized"` |
+| `is_initialized` | `bool \| None` | Filter markets that are initialized |
+| `sort` | `str \| None` | Sort field: `"volume"`, `"volume_24h"`, `"liquidity"`, `"open_interest"` |
+| `tickers` | `str \| None` | Filter by specific market tickers (comma-separated) |
 | `event_ticker` | `str \| None` | Filter by event ticker |
 | `series_ticker` | `str \| None` | Filter by series ticker |
-| `tickers` | `list[str] \| None` | Filter by specific market tickers |
-| `cursor` | `str \| None` | Pagination cursor |
-| `limit` | `int \| None` | Number of results per page |
+| `max_close_ts` | `int \| None` | Filter markets closing before this timestamp |
+| `min_close_ts` | `int \| None` | Filter markets closing after this timestamp |
+| `limit` | `int \| None` | Maximum number of markets to return |
+| `cursor` | `int \| None` | Pagination cursor (number of markets to skip) |
 
 #### Example
 
 ```python
-# Get active markets
-markets = client.markets.get_markets(status="active")
+# Get active markets sorted by volume
+response = client.markets.get_markets(status="active", sort="volume")
 
-for market in markets.markets:
-    print(f"{market.ticker}: Yes ${market.yes_bid}")
+for market in response.markets:
+    print(f"{market.ticker}: YES={market.yes_ask}")
+
+# Get initialized markets only
+response = client.markets.get_markets(is_initialized=True)
 
 # Paginate through results
-if markets.cursor:
-    next_page = client.markets.get_markets(cursor=markets.cursor)
+if response.cursor:
+    next_page = client.markets.get_markets(cursor=response.cursor)
 ```
 
 ### get_market
 
-Fetch a single market by ID.
+Fetch a single market by ticker.
 
 ```python
 def get_market(market_id: str) -> Market
@@ -69,46 +80,81 @@ def get_market(market_id: str) -> Market
 #### Example
 
 ```python
-market = client.markets.get_market("BTCUSD-25JAN-100000")
+market = client.markets.get_market("BTCD-25DEC0313-T92749.99")
 print(f"Status: {market.status}")
-print(f"Yes Bid: ${market.yes_bid}")
+print(f"YES Ask: {market.yes_ask}")
+```
+
+### get_market_by_mint
+
+Fetch a market by outcome token mint address.
+
+```python
+def get_market_by_mint(mint_address: str) -> Market
 ```
 
 ### get_markets_batch
 
-Fetch multiple markets by their IDs in a single request.
+Fetch multiple markets by tickers and/or mint addresses.
 
 ```python
-def get_markets_batch(market_ids: list[str]) -> list[Market]
+def get_markets_batch(
+    tickers: list[str] | None = None,
+    mints: list[str] | None = None,
+) -> list[Market]
 ```
 
 #### Example
 
 ```python
-markets = client.markets.get_markets_batch([
-    "market-id-1",
-    "market-id-2",
-    "market-id-3"
-])
+markets = client.markets.get_markets_batch(
+    tickers=["MARKET-1", "MARKET-2"],
+    mints=["mint-address-1"],
+)
 
 for market in markets:
     print(f"{market.ticker}: {market.status}")
 ```
 
-### get_market_tickers
+### get_outcome_mints
 
-Get all available market tickers.
+Get all outcome token mint addresses.
 
 ```python
-def get_market_tickers() -> list[str]
+def get_outcome_mints(min_close_ts: int | None = None) -> list[str]
 ```
 
-### get_market_tickers_for_event
-
-Get market tickers for a specific event.
+#### Example
 
 ```python
-def get_market_tickers_for_event(event_ticker: str) -> list[str]
+# Get all outcome mints
+all_mints = client.markets.get_outcome_mints()
+print(f"Total outcome tokens: {len(all_mints)}")
+
+# Get outcome mints for markets closing after a specific date
+import time
+future_mints = client.markets.get_outcome_mints(
+    min_close_ts=int(time.time()),  # Only markets not yet closed
+)
+```
+
+### filter_outcome_mints
+
+Filter addresses to find outcome token mints.
+
+```python
+def filter_outcome_mints(addresses: list[str]) -> list[str]
+```
+
+### get_market_candlesticks
+
+Get OHLCV candlestick data for a market.
+
+```python
+def get_market_candlesticks(
+    ticker: str,
+    params: CandlestickParams,
+) -> list[Candlestick]
 ```
 
 ## Types
@@ -118,27 +164,40 @@ def get_market_tickers_for_event(event_ticker: str) -> list[str]
 ```python
 class Market(BaseModel):
     ticker: str
+    title: str
+    subtitle: str
     event_ticker: str
     status: MarketStatus
     result: MarketResult
-    yes_bid: str | None
-    yes_ask: str | None
-    no_bid: str | None
-    no_ask: str | None
-    volume: float | None
-    open_interest: float | None
+    market_type: str
+    yes_sub_title: str
+    no_sub_title: str
+    can_close_early: bool
+    rules_primary: str
+    volume: float
     liquidity: float | None
+    open_interest: float
+    open_time: int
+    close_time: int
+    expiration_time: int
     accounts: dict[str, MarketAccount]
-    # ... additional fields
+    yes_ask: str | None
+    yes_bid: str | None
+    no_ask: str | None
+    no_bid: str | None
 ```
 
 ### MarketStatus
 
 ```python
-class MarketStatus(str, Enum):
-    ACTIVE = "active"
-    CLOSED = "closed"
-    SETTLED = "settled"
+MarketStatus = Literal[
+    "initialized",
+    "active",
+    "inactive",
+    "closed",
+    "determined",
+    "finalized",
+]
 ```
 
 ### MarketsResponse
@@ -146,5 +205,5 @@ class MarketStatus(str, Enum):
 ```python
 class MarketsResponse(BaseModel):
     markets: list[Market]
-    cursor: str | None
+    cursor: int | None
 ```

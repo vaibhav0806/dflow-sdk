@@ -5,7 +5,7 @@ description: Execute token swaps on prediction markets
 
 # Swap API
 
-The Swap API provides methods to get quotes and execute token swaps on prediction markets.
+The Swap API provides imperative swap operations with route preview. Use this for a two-step process: first get a quote, then create the swap transaction.
 
 ## Access
 
@@ -20,15 +20,14 @@ swap_api = client.swap
 
 ### get_quote
 
-Get a quote for a swap without executing it.
+Get a quote for a swap without creating a transaction.
 
 ```python
 def get_quote(
-    market_id: str,
-    side: str,
-    size: float,
-    type: str,
-    slippage_bps: int | None = None
+    input_mint: str,
+    output_mint: str,
+    amount: int | str,
+    slippage_bps: int | None = None,
 ) -> SwapQuote
 ```
 
@@ -36,39 +35,41 @@ def get_quote(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `market_id` | `str` | The market to swap on |
-| `side` | `str` | "yes" or "no" |
-| `size` | `float` | Number of contracts |
-| `type` | `str` | "buy" or "sell" |
+| `input_mint` | `str` | Mint address of the token to sell |
+| `output_mint` | `str` | Mint address of the token to buy |
+| `amount` | `int \| str` | Amount to trade in base units |
 | `slippage_bps` | `int \| None` | Slippage tolerance in basis points |
 
 #### Example
 
 ```python
+from dflow import USDC_MINT
+
 quote = client.swap.get_quote(
-    market_id="BTCUSD-25JAN-100000",
-    side="yes",
-    size=100,
-    type="buy"
+    input_mint=USDC_MINT,
+    output_mint=market.accounts["usdc"].yes_mint,
+    amount=1000000,  # 1 USDC
+    slippage_bps=50,
 )
 
-print(f"Average Price: ${quote.avg_price}")
-print(f"Total Cost: ${quote.total_cost}")
-print(f"Price Impact: {quote.price_impact}%")
+print(f"Input: {quote.in_amount}")
+print(f"Output: {quote.out_amount}")
+print(f"Price Impact: {quote.price_impact_pct}%")
 ```
 
 ### create_swap
 
-Create a swap transaction to be signed and submitted.
+Create a swap transaction ready for signing.
 
 ```python
 def create_swap(
-    market_id: str,
-    side: str,
-    size: float,
-    type: str,
+    input_mint: str,
+    output_mint: str,
+    amount: int | str,
+    slippage_bps: int,
     user_public_key: str,
-    slippage_bps: int | None = None
+    wrap_unwrap_sol: bool | None = None,
+    priority_fee: PriorityFeeConfig | None = None,
 ) -> SwapResponse
 ```
 
@@ -76,33 +77,52 @@ def create_swap(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `market_id` | `str` | The market to swap on |
-| `side` | `str` | "yes" or "no" |
-| `size` | `float` | Number of contracts |
-| `type` | `str` | "buy" or "sell" |
+| `input_mint` | `str` | Mint address of the token to sell |
+| `output_mint` | `str` | Mint address of the token to buy |
+| `amount` | `int \| str` | Amount to trade in base units |
+| `slippage_bps` | `int` | Slippage tolerance in basis points |
 | `user_public_key` | `str` | User's Solana public key |
-| `slippage_bps` | `int \| None` | Slippage tolerance in basis points |
+| `wrap_unwrap_sol` | `bool \| None` | Whether to wrap/unwrap SOL automatically |
+| `priority_fee` | `PriorityFeeConfig \| None` | Priority fee configuration |
 
 #### Example
 
 ```python
 from solders.keypair import Keypair
-from dflow import sign_and_send_transaction
+from dflow import USDC_MINT, sign_send_and_confirm
+from solana.rpc.api import Client
 
 keypair = Keypair.from_base58_string("your-private-key")
+connection = Client("https://api.mainnet-beta.solana.com")
 
 # Create swap transaction
 swap = client.swap.create_swap(
-    market_id="BTCUSD-25JAN-100000",
-    side="yes",
-    size=100,
-    type="buy",
-    user_public_key=str(keypair.pubkey())
+    input_mint=USDC_MINT,
+    output_mint=market.accounts["usdc"].yes_mint,
+    amount=1000000,
+    slippage_bps=50,
+    user_public_key=str(keypair.pubkey()),
 )
 
 # Sign and send
-signature = sign_and_send_transaction(swap.transaction, keypair)
-print(f"Transaction: {signature}")
+result = sign_send_and_confirm(connection, swap.swap_transaction, keypair)
+print(f"Transaction: {result.signature}")
+```
+
+### get_swap_instructions
+
+Get swap instructions for custom transaction composition.
+
+```python
+def get_swap_instructions(
+    input_mint: str,
+    output_mint: str,
+    amount: int | str,
+    slippage_bps: int,
+    user_public_key: str,
+    wrap_unwrap_sol: bool | None = None,
+    priority_fee: PriorityFeeConfig | None = None,
+) -> SwapInstructionsResponse
 ```
 
 ## Types
@@ -111,20 +131,30 @@ print(f"Transaction: {signature}")
 
 ```python
 class SwapQuote(BaseModel):
-    market_id: str
-    side: str
-    size: float
-    type: str
-    avg_price: float
-    total_cost: float
-    price_impact: float
-    fees: float
+    input_mint: str
+    output_mint: str
+    in_amount: str
+    out_amount: str
+    price_impact_pct: float
+    route_plan: list[RoutePlanStep] | None
 ```
 
 ### SwapResponse
 
 ```python
 class SwapResponse(BaseModel):
-    transaction: str  # Base64 encoded transaction
-    quote: SwapQuote
+    swap_transaction: str  # Base64 encoded transaction
+    last_valid_block_height: int | None
+    prioritization_fee_lamports: int | None
+    compute_unit_limit: int | None
+    prioritization_type: str | None
+    quote: SwapQuote | None
+```
+
+### PriorityFeeConfig
+
+```python
+class PriorityFeeConfig(BaseModel):
+    type: Literal["exact", "max"]
+    amount: int
 ```

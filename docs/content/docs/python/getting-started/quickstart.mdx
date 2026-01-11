@@ -12,51 +12,53 @@ This guide will help you get up and running with the DFlow Python SDK in just a 
 ```python
 from dflow import DFlowClient
 
-# Create a client instance
+# Development (default) - no API key required
+# Uses dev-*.dflow.net endpoints for testing with real capital
 client = DFlowClient()
+
+# Production - API key required
+# Uses *.dflow.net endpoints for production deployments
+prod_client = DFlowClient(environment="production", api_key="your-api-key")
 ```
 
 ## Fetch Markets
 
 ```python
-# Get all active markets
-markets = client.markets.get_markets(status="active")
+# Get all active markets sorted by volume
+response = client.markets.get_markets(status="active", sort="volume")
 
-for market in markets.markets[:5]:
-    print(f"{market.ticker}: Yes ${market.yes_bid} / ${market.yes_ask}")
+for market in response.markets[:5]:
+    print(f"{market.ticker}: YES={market.yes_ask}")
 ```
 
 ## Get Market Details
 
 ```python
-# Get a specific market by ID
-market = client.markets.get_market("market-id-here")
+# Get a specific market by ticker
+market = client.markets.get_market("BTCD-25DEC0313-T92749.99")
 print(f"Market: {market.ticker}")
 print(f"Status: {market.status}")
+print(f"YES Ask: {market.yes_ask}")
 ```
 
 ## Fetch Orderbook
 
 ```python
 # Get orderbook for a market
-orderbook = client.orderbook.get_orderbook("market-id-here")
+orderbook = client.orderbook.get_orderbook("BTCD-25DEC0313-T92749.99")
 
-print("Bids:")
-for level in orderbook.bids[:3]:
-    print(f"  ${level.price} - {level.quantity} contracts")
-
-print("Asks:")
-for level in orderbook.asks[:3]:
-    print(f"  ${level.price} - {level.quantity} contracts")
+print("YES Side:")
+print(f"  Bids: {len(orderbook.yes_bid)} levels")
+print(f"  Asks: {len(orderbook.yes_ask)} levels")
 ```
 
 ## Browse Events
 
 ```python
-# Get upcoming events
-events = client.events.get_events(status="active")
+# Get active events
+response = client.events.get_events(status="active")
 
-for event in events.events[:5]:
+for event in response.events[:5]:
     print(f"{event.ticker}: {event.title}")
 ```
 
@@ -69,13 +71,23 @@ from dflow import DFlowClient
 async def main():
     client = DFlowClient()
     
-    async with client.ws as ws:
-        # Subscribe to price updates
-        await ws.subscribe_prices(["market-id-1", "market-id-2"])
-        
-        # Listen for updates
-        async for price in ws.prices():
-            print(f"Market {price.market_id}: ${price.yes_price}")
+    # Connect to WebSocket
+    await client.ws.connect()
+    
+    # Subscribe to price updates
+    client.ws.subscribe_prices(["BTCD-25DEC0313-T92749.99"])
+    
+    # Handle updates
+    def on_price(update):
+        print(f"{update.ticker}: YES={update.yes_price} NO={update.no_price}")
+    
+    client.ws.on_price(on_price)
+    
+    # Run for a while
+    await asyncio.sleep(30)
+    
+    # Cleanup
+    client.ws.disconnect()
 
 asyncio.run(main())
 ```
@@ -83,42 +95,47 @@ asyncio.run(main())
 ## Get a Swap Quote
 
 ```python
+from dflow import USDC_MINT
+
+# First get a market
+market = client.markets.get_market("BTCD-25DEC0313-T92749.99")
+
 # Get a quote for buying YES tokens
 quote = client.swap.get_quote(
-    market_id="market-id-here",
-    side="yes",
-    size=100,  # 100 contracts
-    type="buy"
+    input_mint=USDC_MINT,
+    output_mint=market.accounts["usdc"].yes_mint,
+    amount=1000000,  # 1 USDC
+    slippage_bps=50,
 )
 
-print(f"Average price: ${quote.avg_price}")
-print(f"Total cost: ${quote.total_cost}")
+print(f"Input: {quote.in_amount}")
+print(f"Output: {quote.out_amount}")
+print(f"Price Impact: {quote.price_impact_pct}%")
 ```
 
 ## Execute a Swap (Requires Wallet)
 
 ```python
 from solders.keypair import Keypair
-from dflow import sign_and_send_transaction
+from solana.rpc.api import Client
+from dflow import USDC_MINT, sign_send_and_confirm
 
 # Load your wallet
 keypair = Keypair.from_base58_string("your-private-key")
+connection = Client("https://api.mainnet-beta.solana.com")
 
 # Get swap transaction
-swap_response = client.swap.create_swap(
-    market_id="market-id-here",
-    side="yes",
-    size=100,
-    type="buy",
-    user_public_key=str(keypair.pubkey())
+swap = client.swap.create_swap(
+    input_mint=USDC_MINT,
+    output_mint=market.accounts["usdc"].yes_mint,
+    amount=1000000,
+    slippage_bps=50,
+    user_public_key=str(keypair.pubkey()),
 )
 
 # Sign and send
-signature = sign_and_send_transaction(
-    swap_response.transaction,
-    keypair
-)
-print(f"Transaction: {signature}")
+result = sign_send_and_confirm(connection, swap.swap_transaction, keypair)
+print(f"Transaction: {result.signature}")
 ```
 
 ## Error Handling
@@ -142,13 +159,33 @@ from dflow import collect_all, paginate
 
 # Collect all markets (auto-paginate)
 all_markets = collect_all(
-    lambda cursor: client.markets.get_markets(cursor=cursor)
+    lambda params: client.markets.get_markets(**params),
+    get_items=lambda r: r.markets,
 )
 
-# Or iterate page by page
-for page in paginate(lambda c: client.markets.get_markets(cursor=c)):
-    for market in page.markets:
-        print(market.ticker)
+# Or iterate page by page using async generator
+for market in paginate(
+    lambda params: client.markets.get_markets(**params),
+    get_items=lambda r: r.markets,
+    max_items=100,
+):
+    print(market.ticker)
+```
+
+## Using Retry Utilities
+
+```python
+from dflow import with_retry, DFlowApiError
+
+# Basic usage with default options
+markets = with_retry(lambda: client.markets.get_markets())
+
+# With custom options
+events = with_retry(
+    lambda: client.events.get_events(limit=100),
+    max_retries=5,
+    initial_delay_ms=500,
+)
 ```
 
 ## Next Steps

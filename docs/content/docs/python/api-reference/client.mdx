@@ -10,18 +10,18 @@ The `DFlowClient` is the main entry point for interacting with the DFlow API. It
 ## Import
 
 ```python
-from dflow import DFlowClient, DFlowEnvironment
+from dflow import DFlowClient
 ```
 
 ## Constructor
 
 ```python
 client = DFlowClient(
-    environment: DFlowEnvironment = DFlowEnvironment.DEVELOPMENT,
+    environment: Literal["development", "production"] = "development",
+    api_key: str | None = None,
     metadata_base_url: str | None = None,
     trade_base_url: str | None = None,
-    websocket_url: str | None = None,
-    api_key: str | None = None
+    ws_url: str | None = None,
 )
 ```
 
@@ -29,19 +29,18 @@ client = DFlowClient(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `environment` | `DFlowEnvironment` | `DEVELOPMENT` | API environment to use |
-| `metadata_base_url` | `str \| None` | `None` | Custom metadata API URL |
-| `trade_base_url` | `str \| None` | `None` | Custom trade API URL |
-| `websocket_url` | `str \| None` | `None` | Custom WebSocket URL |
-| `api_key` | `str \| None` | `None` | API key for authenticated endpoints |
+| `environment` | `"development" \| "production"` | `"development"` | Environment to use. Development requires no API key. |
+| `api_key` | `str \| None` | `None` | API key for authenticated endpoints (required for production) |
+| `metadata_base_url` | `str \| None` | `None` | Custom metadata API URL (overrides environment) |
+| `trade_base_url` | `str \| None` | `None` | Custom trade API URL (overrides environment) |
+| `ws_url` | `str \| None` | `None` | Custom WebSocket URL (overrides environment) |
 
 ## Environment Options
 
-```python
-class DFlowEnvironment(Enum):
-    DEVELOPMENT = "development"
-    PRODUCTION = "production"
-```
+| Environment | API Key | Endpoints | Use Case |
+|-------------|---------|-----------|----------|
+| `"development"` | Not required | `dev-*.dflow.net` | Testing with real capital against Kalshi |
+| `"production"` | Required | `*.dflow.net` | Production deployments |
 
 ## API Modules
 
@@ -68,29 +67,34 @@ The client provides access to the following API modules:
 
 ## Examples
 
-### Basic Usage
+### Basic Usage (Development)
 
 ```python
 from dflow import DFlowClient
 
-# Development environment (default)
+# Development environment (default) - no API key required
+# Uses dev-*.dflow.net endpoints for testing with real capital
 client = DFlowClient()
 
 # Access markets
-markets = client.markets.get_markets(status="active")
+response = client.markets.get_markets(status="active")
+for market in response.markets:
+    print(f"{market.ticker}: YES={market.yes_ask}")
 ```
 
 ### Production Environment
 
 ```python
-from dflow import DFlowClient, DFlowEnvironment
+from dflow import DFlowClient
 
-client = DFlowClient(environment=DFlowEnvironment.PRODUCTION)
+# Production requires an API key
+client = DFlowClient(environment="production", api_key="your-api-key")
 ```
 
 ### With API Key
 
 ```python
+# Set API key at initialization
 client = DFlowClient(api_key="your-api-key")
 
 # Or set it later
@@ -104,7 +108,7 @@ client.set_api_key("your-api-key")
 client = DFlowClient(
     metadata_base_url="https://custom-metadata.example.com",
     trade_base_url="https://custom-trade.example.com",
-    websocket_url="wss://custom-ws.example.com"
+    ws_url="wss://custom-ws.example.com"
 )
 ```
 
@@ -112,7 +116,7 @@ client = DFlowClient(
 
 ```python
 with DFlowClient() as client:
-    markets = client.markets.get_markets()
+    response = client.markets.get_markets()
     # HTTP client is automatically closed when exiting the context
 ```
 

@@ -1,11 +1,11 @@
 ---
 title: Live Data API
-description: Fetch live market data including candlesticks and forecasts
+description: Access real-time milestone and progress data
 ---
 
 # Live Data API
 
-The Live Data API provides methods to fetch live market data including candlestick charts and forecast history.
+The Live Data API provides access to real-time milestone and progress data for prediction markets. These endpoints relay data directly from the Kalshi API.
 
 ## Access
 
@@ -18,71 +18,111 @@ live_data_api = client.live_data
 
 ## Methods
 
-### get_candlesticks
+### get_live_data
 
-Fetch candlestick data for a market.
+Get live data for specific milestones.
 
 ```python
-def get_candlesticks(
-    market_id: str,
-    interval: str = "1h",
-    start_time: str | None = None,
-    end_time: str | None = None
-) -> list[Candlestick]
+def get_live_data(milestone_ids: list[str]) -> list[LiveData]
 ```
 
 #### Parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `market_id` | `str` | The market ticker |
-| `interval` | `str` | Candlestick interval: "1m", "5m", "15m", "1h", "4h", "1d" |
-| `start_time` | `str \| None` | Start time (ISO 8601) |
-| `end_time` | `str \| None` | End time (ISO 8601) |
+| `milestone_ids` | `list[str]` | Array of milestone identifiers (max 100) |
 
 #### Example
 
 ```python
-candles = client.live_data.get_candlesticks(
-    market_id="BTCUSD-25JAN-100000",
-    interval="1h"
-)
-
-for candle in candles[-5:]:
-    print(f"{candle.timestamp}: O={candle.open} H={candle.high} L={candle.low} C={candle.close}")
+data = client.live_data.get_live_data(["milestone-1", "milestone-2"])
+for d in data:
+    if d.milestones:
+        print(f"{d.milestones[0].name}: {d.milestones[0].value}")
 ```
 
-### get_forecast_history
+### get_live_data_by_event
 
-Fetch forecast history for a market.
+Get live data for an event by ticker.
 
 ```python
-def get_forecast_history(
-    market_id: str,
-    cursor: str | None = None,
-    limit: int | None = None
-) -> list[ForecastHistory]
+def get_live_data_by_event(
+    event_ticker: str,
+    minimum_start_date: str | None = None,
+    category: str | None = None,
+    competition: str | None = None,
+    source_id: str | None = None,
+    type: str | None = None,
+) -> LiveData
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `event_ticker` | `str` | The event ticker |
+| `minimum_start_date` | `str \| None` | Minimum start date (RFC3339 format) |
+| `category` | `str \| None` | Filter by milestone category |
+| `competition` | `str \| None` | Filter by competition |
+| `source_id` | `str \| None` | Filter by source ID |
+| `type` | `str \| None` | Filter by milestone type |
+
+#### Example
+
+```python
+# Get all live data for an event
+data = client.live_data.get_live_data_by_event("BTCD-25DEC0313")
+
+# Filter by category
+sports_data = client.live_data.get_live_data_by_event(
+    "SPORTS-EVENT",
+    category="sports",
+    competition="NFL",
+)
+```
+
+### get_live_data_by_mint
+
+Get live data for a market by mint address.
+
+```python
+def get_live_data_by_mint(
+    mint_address: str,
+    minimum_start_date: str | None = None,
+    category: str | None = None,
+    competition: str | None = None,
+    source_id: str | None = None,
+    type: str | None = None,
+) -> LiveData
+```
+
+#### Example
+
+```python
+data = client.live_data.get_live_data_by_mint("EPjFWdd5...")
+
+# With filters
+filtered_data = client.live_data.get_live_data_by_mint(
+    "EPjFWdd5...",
+    type="price",
+)
 ```
 
 ## Types
 
-### Candlestick
+### LiveData
 
 ```python
-class Candlestick(BaseModel):
-    timestamp: str
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: float
+class LiveData(BaseModel):
+    event_ticker: str | None
+    milestones: list[Milestone] | None
 ```
 
-### ForecastHistory
+### Milestone
 
 ```python
-class ForecastHistory(BaseModel):
-    timestamp: str
-    yes_price: float
-    no_price: float
+class Milestone(BaseModel):
+    name: str
+    value: Any
+    timestamp: str | None
 ```

@@ -5,7 +5,7 @@ description: Fetch trade history for markets
 
 # Trades API
 
-The Trades API provides methods to fetch historical trade data for prediction markets.
+The Trades API provides methods to fetch historical trade data for prediction markets. Relays requests directly to Kalshi API.
 
 ## Access
 
@@ -20,13 +20,15 @@ trades_api = client.trades
 
 ### get_trades
 
-Fetch trades for a market or globally.
+Fetch trades with optional filtering.
 
 ```python
 def get_trades(
-    market_id: str | None = None,
+    ticker: str | None = None,
+    min_ts: int | None = None,
+    max_ts: int | None = None,
+    limit: int | None = None,
     cursor: str | None = None,
-    limit: int | None = None
 ) -> TradesResponse
 ```
 
@@ -34,18 +36,60 @@ def get_trades(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `market_id` | `str \| None` | Filter by market ID |
-| `cursor` | `str \| None` | Pagination cursor |
-| `limit` | `int \| None` | Number of results per page |
+| `ticker` | `str \| None` | Filter by market ticker |
+| `min_ts` | `int \| None` | Filter trades after this Unix timestamp |
+| `max_ts` | `int \| None` | Filter trades before this Unix timestamp |
+| `limit` | `int \| None` | Maximum trades to return (1-1000, default 100) |
+| `cursor` | `str \| None` | Pagination cursor (trade ID) to start from |
 
 #### Example
 
 ```python
 # Get recent trades for a market
-trades = client.trades.get_trades(market_id="BTCUSD-25JAN-100000")
+response = client.trades.get_trades(
+    ticker="BTCD-25DEC0313-T92749.99",
+    limit=100,
+)
 
-for trade in trades.trades:
-    print(f"{trade.timestamp}: {trade.side} {trade.size} @ ${trade.price}")
+for trade in response.trades:
+    print(f"{trade.created_time}: {trade.taker_side} {trade.count} @ {trade.yes_price}")
+
+# Filter by timestamp range
+response = client.trades.get_trades(
+    min_ts=1704067200,  # Jan 1, 2024
+    max_ts=1704153600,  # Jan 2, 2024
+)
+
+# Paginate through results
+next_page = client.trades.get_trades(cursor=response.cursor)
+```
+
+### get_trades_by_mint
+
+Get trades for a market by mint address.
+
+```python
+def get_trades_by_mint(
+    mint_address: str,
+    min_ts: int | None = None,
+    max_ts: int | None = None,
+    limit: int | None = None,
+    cursor: str | None = None,
+) -> TradesResponse
+```
+
+#### Example
+
+```python
+import time
+
+response = client.trades.get_trades_by_mint("EPjFWdd5...", limit=50)
+
+# Filter by timestamp
+response = client.trades.get_trades_by_mint(
+    "EPjFWdd5...",
+    min_ts=int(time.time()) - 86400,  # Last 24 hours
+)
 ```
 
 ## Types
@@ -54,14 +98,14 @@ for trade in trades.trades:
 
 ```python
 class Trade(BaseModel):
-    id: str
-    market_id: str
-    price: str
-    size: str
+    trade_id: str
+    ticker: str
     side: str
-    timestamp: str
-    taker: str | None
-    maker: str | None
+    yes_price: float
+    no_price: float
+    count: int
+    taker_side: str
+    created_time: str
 ```
 
 ### TradesResponse

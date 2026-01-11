@@ -9,7 +9,9 @@ The SDK exports various constants for API URLs, token mints, and default values.
 
 ## API URLs
 
-### Development Environment
+### Default (Development)
+
+These are the default URLs used when `environment="development"`:
 
 ```python
 from dflow import (
@@ -18,13 +20,15 @@ from dflow import (
     WEBSOCKET_URL
 )
 
-# Development URLs
-print(METADATA_API_BASE_URL)  # https://api-dev.dflow.net/metadata/
-print(TRADE_API_BASE_URL)     # https://api-dev.dflow.net/trade/
-print(WEBSOCKET_URL)          # wss://ws-dev.dflow.net
+# Development URLs - no API key required
+print(METADATA_API_BASE_URL)  # https://dev-prediction-markets-api.dflow.net/api/v1
+print(TRADE_API_BASE_URL)     # https://dev-quote-api.dflow.net
+print(WEBSOCKET_URL)          # wss://dev-prediction-markets-api.dflow.net/api/v1/ws
 ```
 
-### Production Environment
+### Production
+
+These URLs are used when `environment="production"`:
 
 ```python
 from dflow import (
@@ -33,10 +37,10 @@ from dflow import (
     PROD_WEBSOCKET_URL
 )
 
-# Production URLs
-print(PROD_METADATA_API_BASE_URL)  # https://api.dflow.net/metadata/
-print(PROD_TRADE_API_BASE_URL)     # https://api.dflow.net/trade/
-print(PROD_WEBSOCKET_URL)          # wss://ws.dflow.net
+# Production URLs - API key required
+print(PROD_METADATA_API_BASE_URL)  # https://prediction-markets-api.dflow.net/api/v1
+print(PROD_TRADE_API_BASE_URL)     # https://quote-api.dflow.net
+print(PROD_WEBSOCKET_URL)          # wss://prediction-markets-api.dflow.net/api/v1/ws
 ```
 
 ## Token Mints
@@ -54,8 +58,8 @@ print(SOL_MINT)   # So11111111111111111111111111111111111111112
 ```python
 from dflow import DEFAULT_SLIPPAGE_BPS, OUTCOME_TOKEN_DECIMALS
 
-# Default slippage tolerance (100 = 1%)
-print(DEFAULT_SLIPPAGE_BPS)  # 100
+# Default slippage tolerance (50 = 0.5%)
+print(DEFAULT_SLIPPAGE_BPS)  # 50
 
 # Decimal places for outcome tokens
 print(OUTCOME_TOKEN_DECIMALS)  # 6
@@ -76,20 +80,18 @@ print(MAX_FILTER_ADDRESSES)  # 200
 ## Usage Example
 
 ```python
-from dflow import (
-    DFlowClient,
-    USDC_MINT,
-    DEFAULT_SLIPPAGE_BPS
-)
+from dflow import DFlowClient, USDC_MINT, DEFAULT_SLIPPAGE_BPS
 
 client = DFlowClient()
 
+# Get a market
+market = client.markets.get_market("BTCD-25DEC0313-T92749.99")
+
 # Use constants in API calls
 quote = client.swap.get_quote(
-    market_id="BTCUSD-25JAN-100000",
-    side="yes",
-    size=100,
-    type="buy",
-    slippage_bps=DEFAULT_SLIPPAGE_BPS
+    input_mint=USDC_MINT,
+    output_mint=market.accounts["usdc"].yes_mint,
+    amount=1000000,  # 1 USDC
+    slippage_bps=DEFAULT_SLIPPAGE_BPS,
 )
 ```

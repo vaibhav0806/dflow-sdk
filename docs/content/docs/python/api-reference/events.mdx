@@ -1,11 +1,11 @@
 ---
 title: Events API
-description: Fetch and query events
+description: Fetch and query prediction market events
 ---
 
 # Events API
 
-The Events API provides methods to fetch and query events on DFlow. Events are collections of related markets.
+The Events API provides methods to fetch and query events on DFlow. Events are the top-level containers for prediction markets.
 
 ## Access
 
@@ -24,11 +24,13 @@ Fetch multiple events with optional filtering.
 
 ```python
 def get_events(
-    status: str | None = None,
-    series_ticker: str | None = None,
-    cursor: str | None = None,
+    status: MarketStatus | None = None,
+    series_tickers: str | None = None,
+    with_nested_markets: bool | None = None,
+    is_initialized: bool | None = None,
+    sort: SortField | None = None,
     limit: int | None = None,
-    with_nested_markets: bool = False
+    cursor: int | None = None,
 ) -> EventsResponse
 ```
 
@@ -36,34 +38,40 @@ def get_events(
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `status` | `str \| None` | Filter by status |
-| `series_ticker` | `str \| None` | Filter by series ticker |
-| `cursor` | `str \| None` | Pagination cursor |
-| `limit` | `int \| None` | Number of results per page |
-| `with_nested_markets` | `bool` | Include nested market data |
+| `status` | `str \| None` | Filter by status: `"active"`, `"closed"`, `"determined"`, `"finalized"` |
+| `series_tickers` | `str \| None` | Filter by series tickers (comma-separated, max 25) |
+| `with_nested_markets` | `bool \| None` | Include nested market data |
+| `is_initialized` | `bool \| None` | Filter events that are initialized |
+| `sort` | `str \| None` | Sort field: `"volume"`, `"volume_24h"`, `"liquidity"`, `"open_interest"`, `"start_date"` |
+| `limit` | `int \| None` | Maximum number of events to return |
+| `cursor` | `int \| None` | Pagination cursor (number of events to skip) |
 
 #### Example
 
 ```python
-# Get active events
-events = client.events.get_events(status="active")
+# Get active events sorted by volume
+response = client.events.get_events(status="active", sort="volume")
 
-for event in events.events:
+for event in response.events:
     print(f"{event.ticker}: {event.title}")
 
-# Get events with their markets
-events = client.events.get_events(with_nested_markets=True)
-for event in events.events:
-    print(f"{event.title} has {len(event.markets or [])} markets")
+# Get events for specific series
+response = client.events.get_events(series_tickers="KXBTC,KXETH", limit=50)
+
+# Get initialized events only
+response = client.events.get_events(is_initialized=True)
+
+# Paginate through results
+next_page = client.events.get_events(cursor=response.cursor)
 ```
 
 ### get_event
 
-Fetch a single event by ticker.
+Fetch a single event by its ID.
 
 ```python
 def get_event(
-    event_ticker: str,
+    event_id: str,
     with_nested_markets: bool = False
 ) -> Event
 ```
@@ -71,9 +79,70 @@ def get_event(
 #### Example
 
 ```python
-event = client.events.get_event("BTCUSD-25JAN", with_nested_markets=True)
+# Get event without markets
+event = client.events.get_event("BTCD-25DEC0313")
+
+# Get event with all its markets
+event = client.events.get_event("BTCD-25DEC0313", with_nested_markets=True)
 print(f"Event: {event.title}")
 print(f"Markets: {len(event.markets or [])}")
+```
+
+### get_event_forecast_history
+
+Get forecast percentile history for an event.
+
+```python
+def get_event_forecast_history(
+    series_ticker: str,
+    event_id: str,
+    params: ForecastHistoryParams,
+) -> ForecastHistory
+```
+
+#### Example
+
+```python
+from dflow.types import ForecastHistoryParams
+
+history = client.events.get_event_forecast_history(
+    "KXBTC",
+    "event-123",
+    ForecastHistoryParams(
+        percentiles="2500,5000,7500",  # 25th, 50th, 75th percentiles
+        start_ts=1704067200,
+        end_ts=1704153600,
+        period_interval=60,
+    )
+)
+```
+
+### get_event_candlesticks
+
+Get OHLCV candlestick data for an event.
+
+```python
+def get_event_candlesticks(
+    ticker: str,
+    params: CandlestickParams,
+) -> list[Candlestick]
+```
+
+#### Example
+
+```python
+from dflow.types import CandlestickParams
+
+candles = client.events.get_event_candlesticks(
+    "BTCD-25DEC0313",
+    CandlestickParams(
+        start_ts=1704067200,
+        end_ts=1704153600,
+        period_interval=60,  # 1 hour candles
+    )
+)
+for c in candles:
+    print(f"O: {c.open}, H: {c.high}, L: {c.low}, C: {c.close}")
 ```
 
 ## Types
@@ -84,15 +153,20 @@ print(f"Markets: {len(event.markets or [])}")
 class Event(BaseModel):
     ticker: str
     title: str
-    subtitle: str | None
+    subtitle: str
     series_ticker: str
-    strike_date: str | int | None
-    expiration_time: str | int | None
-    volume: float | None
+    competition: str | None
+    competition_scope: str | None
+    image_url: str | None
     liquidity: float | None
-    open_interest: float | None
     markets: list[Market] | None
-    # ... additional fields
+    open_interest: float | None
+    settlement_sources: list[SettlementSource] | None
+    strike_date: int | None
+    strike_period: str | None
+    mutually_exclusive: bool | None
+    volume: float | None
+    volume_24h: float | None
 ```
 
 ### EventsResponse
@@ -100,5 +174,5 @@ class Event(BaseModel):
 ```python
 class EventsResponse(BaseModel):
     events: list[Event]
-    cursor: str | None
+    cursor: int | None
 ```
