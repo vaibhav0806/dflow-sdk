@@ -4,7 +4,6 @@ from dflow.types import (
     Candlestick,
     CandlestickParams,
     Event,
-    EventsParams,
     EventsResponse,
     ForecastHistory,
     ForecastHistoryParams,

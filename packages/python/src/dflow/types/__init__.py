@@ -87,9 +87,9 @@ from .trades import (
     Trade,
     TradeAction,
     TradesByMintParams,
+    TradeSide,
     TradesParams,
     TradesResponse,
-    TradeSide,
 )
 from .venues import Venue
 from .websocket import (
