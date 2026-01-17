@@ -2,6 +2,7 @@ import { MarketsAPI } from '../src/api/metadata/markets';
 import { TagsAPI } from '../src/api/metadata/tags';
 import { EventsAPI } from '../src/api/metadata/events';
 import { SearchAPI } from '../src/api/metadata/search';
+import { SeriesAPI } from '../src/api/metadata/series';
 import { HttpClient } from '../src/utils/http';
 
 let url = 'https://dev-prediction-markets-api.dflow.net/api/v1';
@@ -14,6 +15,16 @@ const marketsAPI = new MarketsAPI(http);
 const tagsAPI = new TagsAPI(http);
 const eventsAPI = new EventsAPI(http);
 const searchAPI = new SearchAPI(http);
+const seriesAPI = new SeriesAPI(http);
+
+// seriesAPI.getSeries({
+//     category: 'Sports',
+//     status: 'active',
+//     isInitialized: true,
+//     tags: 'Football'
+// }).then((response) => {
+//     console.log(response);
+// })
 
 // eventsAPI.getEvent('KXFEDDECISION-26JAN', true).then((response) => {
 //     console.log(response);

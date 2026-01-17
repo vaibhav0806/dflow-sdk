@@ -1,6 +1,6 @@
 [project]
 name = "dflow-sdk"
-version = "0.1.6"
+version = "0.1.7"
 description = "Python SDK for DFlow on Solana - prediction markets and trading"
 authors = [{name = "DFlow Team", email = "dev@dflow.net"}]
 maintainers = [{name = "Vaibhav", email = "vaibhav@dflow.net"}]
