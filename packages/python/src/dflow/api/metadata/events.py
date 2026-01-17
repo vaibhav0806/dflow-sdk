@@ -1,7 +1,6 @@
 """Events API for DFlow SDK."""
 
 from dflow.types import (
-    Candlestick,
     CandlestickParams,
     Event,
     EventsResponse,
