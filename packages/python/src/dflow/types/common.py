@@ -5,6 +5,19 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class PaginationParams(BaseModel):
+    """Parameters for paginated API requests."""
+
+    cursor: int | None = None
+    limit: int | None = None
+
+
+class PaginatedResponse(BaseModel):
+    """Base class for paginated responses."""
+
+    cursor: int | None = None
+
+
 class OHLCV(BaseModel):
     """OHLCV data."""
 
