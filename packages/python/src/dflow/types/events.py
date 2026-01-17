@@ -34,7 +34,7 @@ class Event(BaseModel):
     strike_period: str | None = Field(default=None, alias="strikePeriod")
     mutually_exclusive: bool | None = Field(default=None, alias="mutuallyExclusive")
     volume: float | None = None
-    volume_24h: float | None = Field(default=None, alias="volume24h")
+    volume24h: float | None = Field(default=None, alias="volume24h")
 
     model_config = {"populate_by_name": True}
 

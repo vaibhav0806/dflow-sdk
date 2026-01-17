@@ -48,11 +48,9 @@ class CandlestickParams(BaseModel):
 # Sort options for events and markets.
 SortField = Literal[
     "volume",
-    "volume_24h",
+    "volume24h",
     "liquidity",
-    "open_interest",
-    "start_date",
-    "score",
+    "openInterest"
 ]
 
 # Sort order direction.

@@ -66,7 +66,7 @@ console.log(response.cursor);    // Pagination cursor (number)
 | `status` | `MarketStatus` | No | Filter by status: `'active'`, `'closed'`, `'determined'`, `'finalized'` |
 | `seriesTickers` | `string` | No | Filter by series tickers (comma-separated, max 25) |
 | `isInitialized` | `boolean` | No | Filter events that are initialized (have a market ledger) |
-| `sort` | `SortField` | No | Sort field: `'volume'`, `'volume_24h'`, `'liquidity'`, `'open_interest'`, `'start_date'` |
+| `sort` | `SortField` | No | Sort field: `'volume'`, `'volume24h'`, `'liquidity'`, `'openInterest'` |
 | `withNestedMarkets` | `boolean` | No | Include nested markets in response |
 | `limit` | `number` | No | Maximum number of events to return |
 | `cursor` | `number` | No | Pagination cursor (number of events to skip) |

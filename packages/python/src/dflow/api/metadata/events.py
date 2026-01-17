@@ -74,7 +74,7 @@ class EventsAPI:
             series_tickers: Filter by series tickers (comma-separated, max 25)
             with_nested_markets: If True, includes markets within each event
             is_initialized: Filter events that are initialized
-            sort: Sort field (volume, volume_24h, liquidity, open_interest, start_date)
+            sort: Sort field (volume, volume24h, liquidity, openInterest)
             limit: Maximum number of events to return
             cursor: Pagination cursor (number of events to skip)
 

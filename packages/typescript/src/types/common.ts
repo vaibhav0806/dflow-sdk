@@ -40,11 +40,9 @@ export interface CandlestickParams {
  */
 export type SortField =
   | 'volume'
-  | 'volume_24h'
+  | 'volume24h'
   | 'liquidity'
-  | 'open_interest'
-  | 'start_date'
-  | 'score';
+  | 'openInterest'
 
 /**
  * Sort order direction.
