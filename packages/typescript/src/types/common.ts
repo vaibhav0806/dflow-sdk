@@ -17,6 +17,35 @@ export interface Candlestick {
   volume: number;
 }
 
+export interface OHLCV {
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  close: number | null;
+  open_dollars?: string;
+  high_dollars?: string;
+  low_dollars?: string;
+  close_dollars?: string;
+}
+
+export interface PriceOHLCV extends OHLCV {
+  min?: number | null;
+  max?: number | null;
+  mean?: number | null;
+  mean_dollars?: string;
+  previous?: number | null;
+  previous_dollars?: string;
+}
+
+export interface MarketCandlestick {
+  end_period_ts: number;
+  open_interest: number;
+  volume: number;
+  price: PriceOHLCV;
+  yes_ask?: OHLCV;
+  yes_bid?: OHLCV;
+}
+
 /**
  * Period interval in minutes for candlesticks.
  * Valid values: 1 (1 minute), 60 (1 hour), 1440 (1 day)

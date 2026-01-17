@@ -4,8 +4,11 @@ from .common import (
     Candlestick,
     CandlestickParams,
     CandlestickPeriodInterval,
+    MarketCandlestick,
+    OHLCV,
     PaginatedResponse,
     PaginationParams,
+    PriceOHLCV,
     SortField,
     SortOrder,
 )
@@ -109,6 +112,9 @@ __all__ = [
     "Candlestick",
     "CandlestickParams",
     "CandlestickPeriodInterval",
+    "MarketCandlestick",
+    "OHLCV",
+    "PriceOHLCV",
     "SortField",
     "SortOrder",
     # Events

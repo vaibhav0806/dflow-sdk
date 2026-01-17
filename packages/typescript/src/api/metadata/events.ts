@@ -5,8 +5,8 @@ import type {
   EventsResponse,
   ForecastHistory,
   ForecastHistoryParams,
-  Candlestick,
   CandlestickParams,
+  MarketCandlestick,
 } from '../../types/index.js';
 
 /**
@@ -28,7 +28,7 @@ import type {
  * ```
  */
 export class EventsAPI {
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Get a single event by its ID.
@@ -164,38 +164,60 @@ export class EventsAPI {
   }
 
   /**
-   * Get OHLCV candlestick data for an event.
+   * Get OHLCV candlestick data for all markets in an event.
    *
    * Relays event candlesticks from the Kalshi API. Automatically resolves
    * the series_ticker from the event ticker.
+   * 
+   * Returns a dictionary mapping market tickers to their candlestick data.
    *
    * @param ticker - The event ticker
    * @param params - Required candlestick parameters
    * @param params.startTs - Start timestamp (Unix timestamp in seconds)
    * @param params.endTs - End timestamp (Unix timestamp in seconds)
    * @param params.periodInterval - Time period length of each candlestick in minutes (1, 60, or 1440)
-   * @returns Array of candlestick data points
+   * @returns Dictionary of candlestick data by market ticker
    *
    * @example
    * ```typescript
-   * const candles = await dflow.events.getEventCandlesticks('BTCD-25DEC0313', {
+   * const marketCandles = await dflow.events.getEventCandlesticks('KXFEDDECISION-26JAN', {
    *   startTs: 1704067200,    // Jan 1, 2024
    *   endTs: 1704153600,      // Jan 2, 2024
    *   periodInterval: 60,     // 1 hour candles
    * });
-   * candles.forEach(c => {
-   *   console.log(`Open: ${c.open}, High: ${c.high}, Low: ${c.low}, Close: ${c.close}`);
+   * 
+   * Object.keys(marketCandles).forEach(marketTicker => {
+   *   const candles = marketCandles[marketTicker];
+   *   console.log(`Market: ${marketTicker}, Candles: ${candles.length}`);
+   *   candles.forEach(c => {
+   *     console.log(`  Close: ${c.price.close}`);
+   *   });
    * });
    * ```
    */
   async getEventCandlesticks(
     ticker: string,
     params: CandlestickParams
-  ): Promise<Candlestick[]> {
-    const response = await this.http.get<{ candlesticks: Candlestick[] }>(
+  ): Promise<Record<string, MarketCandlestick[]>> {
+    const response = await this.http.get<{
+      market_candlesticks: MarketCandlestick[][],
+      market_tickers: string[]
+    }>(
       `/event/${ticker}/candlesticks`,
       params
     );
-    return response.candlesticks;
+
+    // Map candlesticks to their market tickers
+    const result: Record<string, MarketCandlestick[]> = {};
+    if (response.market_tickers && response.market_candlesticks) {
+      response.market_tickers.forEach((marketTicker, index) => {
+        const candles = response.market_candlesticks[index];
+        if (candles && candles.length > 0) {
+          result[marketTicker] = candles;
+        }
+      });
+    }
+
+    return result;
   }
 }
