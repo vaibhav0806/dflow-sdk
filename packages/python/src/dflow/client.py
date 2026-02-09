@@ -13,6 +13,7 @@ from dflow.api.metadata import (
     TagsAPI,
     TradesAPI,
 )
+from dflow.api.proof import ProofAPI
 from dflow.api.trade import (
     IntentAPI,
     OrdersAPI,
@@ -21,7 +22,6 @@ from dflow.api.trade import (
     TokensAPI,
     VenuesAPI,
 )
-from dflow.api.proof import ProofAPI
 from dflow.utils.constants import (
     METADATA_API_BASE_URL,
     PROD_METADATA_API_BASE_URL,

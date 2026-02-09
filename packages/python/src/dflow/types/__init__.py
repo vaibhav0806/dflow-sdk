@@ -1,11 +1,11 @@
 """Type definitions for DFlow SDK."""
 
 from .common import (
+    OHLCV,
     Candlestick,
     CandlestickParams,
     CandlestickPeriodInterval,
     MarketCandlestick,
-    OHLCV,
     PaginatedResponse,
     PaginationParams,
     PriceOHLCV,
@@ -65,6 +65,7 @@ from .orders import (
     SwapQuote,
     SwapResponse,
 )
+from .proof import DeepLinkParams, VerifyAddressResponse
 from .search import SearchEntityType, SearchParams, SearchResult
 from .series import Series, SeriesParams, SeriesResponse
 from .solana import (
@@ -95,7 +96,6 @@ from .trades import (
     TradesResponse,
 )
 from .venues import Venue
-from .proof import DeepLinkParams, VerifyAddressResponse
 from .websocket import (
     OrderbookUpdate,
     PriceLevel,

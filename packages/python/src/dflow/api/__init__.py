@@ -11,6 +11,7 @@ from .metadata import (
     TagsAPI,
     TradesAPI,
 )
+from .proof import ProofAPI
 from .trade import (
     IntentAPI,
     OrdersAPI,
@@ -19,7 +20,6 @@ from .trade import (
     TokensAPI,
     VenuesAPI,
 )
-from .proof import ProofAPI
 
 __all__ = [
     # Metadata APIs
