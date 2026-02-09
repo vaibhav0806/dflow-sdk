@@ -9,6 +9,9 @@ from dflow.utils.constants import (
     PROD_METADATA_API_BASE_URL,
     PROD_TRADE_API_BASE_URL,
     PROD_WEBSOCKET_URL,
+    PROOF_API_BASE_URL,
+    PROOF_DEEP_LINK_BASE_URL,
+    PROOF_SIGNATURE_MESSAGE_PREFIX,
     SOL_MINT,
     TRADE_API_BASE_URL,
     USDC_MINT,
@@ -81,3 +84,22 @@ class TestAPILimits:
         """Test filter addresses limit is reasonable."""
         assert MAX_FILTER_ADDRESSES == 200
         assert MAX_FILTER_ADDRESSES > 0
+
+
+class TestProofConstants:
+    """Tests for Proof KYC API constants."""
+
+    def test_proof_api_base_url(self):
+        """Test Proof API base URL is valid."""
+        assert PROOF_API_BASE_URL == "https://proof.dflow.net"
+        assert PROOF_API_BASE_URL.startswith("https://")
+
+    def test_proof_deep_link_base_url(self):
+        """Test Proof deep link base URL is valid."""
+        assert PROOF_DEEP_LINK_BASE_URL == "https://dflow.net/proof"
+        assert PROOF_DEEP_LINK_BASE_URL.startswith("https://")
+
+    def test_proof_signature_message_prefix(self):
+        """Test Proof signature message prefix is correct."""
+        assert PROOF_SIGNATURE_MESSAGE_PREFIX == "Proof KYC verification: "
+        assert PROOF_SIGNATURE_MESSAGE_PREFIX.endswith(": ")

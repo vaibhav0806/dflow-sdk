@@ -97,3 +97,161 @@ def mock_search_data(mock_event_data):
         "cursor": 0,
         "events": [mock_event_data],
     }
+
+
+@pytest.fixture
+def mock_series_data():
+    """Sample series data for testing."""
+    return {
+        "ticker": "KXBTC",
+        "title": "Bitcoin Price",
+        "category": "Crypto",
+        "tags": ["bitcoin", "crypto", "price"],
+        "frequency": "daily",
+        "feeType": "standard",
+        "feeMultiplier": 1.0,
+        "contractTermsUrl": "https://example.com/terms",
+        "contractUrl": "https://example.com/contract",
+        "additionalProhibitions": [],
+        "settlementSources": [{"name": "CoinGecko", "url": "https://coingecko.com"}],
+    }
+
+
+@pytest.fixture
+def mock_tags_data():
+    """Sample tags data for testing."""
+    return {
+        "tagsByCategories": {
+            "Crypto": ["bitcoin", "ethereum", "solana"],
+            "Politics": ["election", "policy"],
+            "Sports": ["nfl", "nba", "mlb"],
+        }
+    }
+
+
+@pytest.fixture
+def mock_live_data():
+    """Sample live data for testing."""
+    return {
+        "eventTicker": "BTCD-25DEC0313",
+        "milestones": [
+            {
+                "id": "milestone-1",
+                "name": "BTC Price",
+                "value": "92750.00",
+                "timestamp": "2024-01-01T12:00:00Z",
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def mock_sports_filters_data():
+    """Sample sports filters data for testing."""
+    return {
+        "filtersBySports": {
+            "NFL": {
+                "scopes": ["regular_season", "playoffs"],
+                "competitions": {
+                    "Super Bowl": {"scopes": ["championship"]},
+                    "Week 1": {"scopes": ["regular_season"]},
+                },
+            },
+            "NBA": {
+                "scopes": ["regular_season"],
+                "competitions": {
+                    "Finals": {"scopes": ["championship"]},
+                },
+            },
+        },
+        "sportOrdering": ["NFL", "NBA"],
+    }
+
+
+@pytest.fixture
+def mock_token_data():
+    """Sample token data for testing."""
+    return {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "name": "USD Coin",
+    }
+
+
+@pytest.fixture
+def mock_token_with_decimals_data():
+    """Sample token with decimals data for testing."""
+    return {
+        "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "decimals": 6,
+    }
+
+
+@pytest.fixture
+def mock_venue_data():
+    """Sample venue data for testing."""
+    return {
+        "id": "kalshi-1",
+        "name": "kalshi",
+        "label": "Kalshi",
+    }
+
+
+@pytest.fixture
+def mock_order_response_data():
+    """Sample order response data for testing."""
+    return {
+        "transaction": "base64_encoded_transaction",
+        "inAmount": "1000000",
+        "outAmount": "1538461",
+        "executionMode": "sync",
+        "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outputMint": "YesMint123456789abcdefghijklmnopqrstuvwxyz",
+    }
+
+
+@pytest.fixture
+def mock_order_status_data():
+    """Sample order status data for testing."""
+    return {
+        "status": "closed",
+        "signature": "5TuPHPFe7p3nLh123456",
+        "inAmount": "1000000",
+        "outAmount": "1538461",
+        "fills": [
+            {
+                "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                "outputMint": "YesMint123456789abcdefghijklmnopqrstuvwxyz",
+                "inAmount": "1000000",
+                "outAmount": "1538461",
+                "price": 65,
+                "timestamp": 1704067200,
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def mock_intent_quote_data():
+    """Sample intent quote data for testing."""
+    return {
+        "inputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "outputMint": "YesMint123456789abcdefghijklmnopqrstuvwxyz",
+        "inAmount": "1000000",
+        "outAmount": "1538461",
+        "minOutAmount": "1500000",
+        "maxInAmount": "1050000",
+        "expiresAt": "2024-01-01T12:00:00Z",
+    }
+
+
+@pytest.fixture
+def mock_intent_response_data(mock_intent_quote_data):
+    """Sample intent response data for testing."""
+    return {
+        "transaction": "base64_encoded_intent_transaction",
+        "intentId": "intent-123456",
+        "quote": mock_intent_quote_data,
+    }
