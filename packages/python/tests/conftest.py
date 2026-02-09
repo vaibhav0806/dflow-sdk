@@ -255,3 +255,39 @@ def mock_intent_response_data(mock_intent_quote_data):
         "intentId": "intent-123456",
         "quote": mock_intent_quote_data,
     }
+
+
+@pytest.fixture
+def mock_swap_response_data():
+    """Sample swap response data for testing."""
+    return {
+        "swapTransaction": "base64_encoded_swap_transaction",
+        "lastValidBlockHeight": 123456789,
+        "prioritizationFeeLamports": 5000,
+        "computeUnitLimit": 200000,
+    }
+
+
+@pytest.fixture
+def mock_swap_instructions_data():
+    """Sample swap instructions response data for testing."""
+    return {
+        "setupInstructions": [
+            {
+                "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                "accounts": [
+                    {"pubkey": "account1", "isSigner": True, "isWritable": True}
+                ],
+                "data": "base64data",
+            }
+        ],
+        "swapInstruction": {
+            "programId": "DFlow111111111111111111111111111111111111111",
+            "accounts": [
+                {"pubkey": "account2", "isSigner": False, "isWritable": True}
+            ],
+            "data": "swapdata",
+        },
+        "cleanupInstruction": None,
+        "addressLookupTableAddresses": ["ALT1111111111111111111111111111111111111111"],
+    }

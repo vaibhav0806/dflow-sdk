@@ -158,6 +158,41 @@ class TestMarketsAPI:
             assert candles[0].open == 65
             assert candles[0].close == 66
 
+    def test_get_market_candlesticks_by_mint(self, httpx_mock: HTTPXMock):
+        """Test get_market_candlesticks_by_mint method."""
+        from dflow.types import CandlestickParams
+
+        mock_candlesticks = {
+            "candlesticks": [
+                {
+                    "timestamp": 1704067200,
+                    "open": 65,
+                    "high": 68,
+                    "low": 62,
+                    "close": 66,
+                    "volume": 1000,
+                    "openInterest": 500,
+                }
+            ]
+        }
+        httpx_mock.add_response(
+            url="https://dev-prediction-markets-api.dflow.net/api/v1/market/by-mint/YesMint123/candlesticks?startTs=1704067200&endTs=1704153600&periodInterval=60",
+            json=mock_candlesticks,
+        )
+
+        with DFlowClient() as client:
+            candles = client.markets.get_market_candlesticks_by_mint(
+                "YesMint123",
+                CandlestickParams(
+                    start_ts=1704067200,
+                    end_ts=1704153600,
+                    period_interval=60,
+                ),
+            )
+
+            assert len(candles) == 1
+            assert candles[0].open == 65
+
 
 class TestEventsAPI:
     """Tests for EventsAPI."""
@@ -338,6 +373,21 @@ class TestOrderbookAPI:
             yes_levels = orderbook.get_yes_levels()
             assert yes_levels[0].price == 0.65
 
+    def test_get_orderbook_by_mint(self, httpx_mock: HTTPXMock, mock_orderbook_data):
+        """Test get_orderbook_by_mint method."""
+        httpx_mock.add_response(
+            url="https://dev-prediction-markets-api.dflow.net/api/v1/orderbook/by-mint/YesMint123456789abcdefghijklmnopqrstuvwxyz",
+            json=mock_orderbook_data,
+        )
+
+        with DFlowClient() as client:
+            orderbook = client.orderbook.get_orderbook_by_mint(
+                "YesMint123456789abcdefghijklmnopqrstuvwxyz"
+            )
+
+            assert orderbook.sequence == 1704067200000
+            assert len(orderbook.yes_bids) == 2
+
 
 class TestTradesAPI:
     """Tests for TradesAPI."""
@@ -410,6 +460,61 @@ class TestSwapAPI:
             assert quote.in_amount == "1000000"
             assert quote.out_amount == "1538461"
             assert quote.price_impact_pct == 0.05
+
+    def test_create_swap(
+        self, httpx_mock: HTTPXMock, mock_quote_data, mock_swap_response_data
+    ):
+        """Test create_swap method."""
+        # First call gets the quote
+        httpx_mock.add_response(
+            url="https://dev-quote-api.dflow.net/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=YesMint123&amount=1000000&slippageBps=50",
+            json=mock_quote_data,
+        )
+        # Second call creates the swap
+        httpx_mock.add_response(
+            url="https://dev-quote-api.dflow.net/swap",
+            json=mock_swap_response_data,
+        )
+
+        with DFlowClient() as client:
+            swap = client.swap.create_swap(
+                input_mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                output_mint="YesMint123",
+                amount=1000000,
+                slippage_bps=50,
+                user_public_key="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+            )
+
+            assert swap.swap_transaction == "base64_encoded_swap_transaction"
+            assert swap.last_valid_block_height == 123456789
+
+    def test_get_swap_instructions(
+        self, httpx_mock: HTTPXMock, mock_quote_data, mock_swap_instructions_data
+    ):
+        """Test get_swap_instructions method."""
+        # First call gets the quote
+        httpx_mock.add_response(
+            url="https://dev-quote-api.dflow.net/quote?inputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&outputMint=YesMint123&amount=1000000&slippageBps=50",
+            json=mock_quote_data,
+        )
+        # Second call gets swap instructions
+        httpx_mock.add_response(
+            url="https://dev-quote-api.dflow.net/swap-instructions",
+            json=mock_swap_instructions_data,
+        )
+
+        with DFlowClient() as client:
+            instructions = client.swap.get_swap_instructions(
+                input_mint="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                output_mint="YesMint123",
+                amount=1000000,
+                slippage_bps=50,
+                user_public_key="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+            )
+
+            assert len(instructions.setup_instructions) == 1
+            assert instructions.swap_instruction is not None
+            assert len(instructions.address_lookup_table_addresses) == 1
 
 
 class TestSearchAPI:

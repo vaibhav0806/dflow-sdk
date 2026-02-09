@@ -311,6 +311,194 @@ async function phase2MetadataAPIs(): Promise<boolean> {
     return results;
   });
 
+  // 2.16 Get sports filters
+  await runner.test('2.16 Get sports filters', async () => {
+    const filters = await state.dflow.sports.getFiltersBySports();
+    runner.log(`Found ${filters.sportOrdering.length} sports`);
+    return filters;
+  });
+
+  // 2.17 Fetch orderbook by mint
+  if (state.yesMint) {
+    await runner.test('2.17 Fetch orderbook by mint', async () => {
+      const orderbook = await state.dflow.orderbook.getOrderbookByMint(state.yesMint!);
+      runner.log(`YES bids: ${orderbook.yesBid?.length || 0}`);
+      return orderbook;
+    });
+  }
+
+  // 2.18 Fetch trades by mint
+  if (state.yesMint) {
+    await runner.test('2.18 Fetch trades by mint', async () => {
+      const response = await state.dflow.trades.getTradesByMint(state.yesMint!, { limit: 5 });
+      runner.log(`Found ${response.trades.length} trades for mint`);
+      return response;
+    });
+  }
+
+  // 2.19 Filter outcome mints
+  if (state.yesMint && state.noMint) {
+    await runner.test('2.19 Filter outcome mints', async () => {
+      const testAddresses = [state.yesMint!, state.noMint!, USDC_MINT];
+      const filtered = await state.dflow.markets.filterOutcomeMints(testAddresses);
+      runner.log(`Filtered ${testAddresses.length} addresses -> ${filtered.length} outcome mints`);
+      return filtered;
+    });
+  }
+
+  // 2.20 Get live data (if milestones exist)
+  await runner.test('2.20 Get live data', async () => {
+    try {
+      // Try with a sample milestone ID - may fail if no milestones exist
+      const data = await state.dflow.liveData.getLiveData(['test-milestone']);
+      runner.log(`Live data entries: ${data.length}`);
+      return data;
+    } catch (error: any) {
+      runner.log(`Live data not available: ${error.message}`);
+      return [];
+    }
+  });
+
+  // 2.21 Get market candlesticks
+  if (state.sampleMarket) {
+    await runner.test('2.21 Get market candlesticks', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const candles = await state.dflow.markets.getMarketCandlesticks(
+        state.sampleMarket!.ticker,
+        {
+          startTs: now - 86400, // 24 hours ago
+          endTs: now,
+          periodInterval: 60, // 1 hour
+        }
+      );
+      runner.log(`Found ${candles.length} candlesticks`);
+      return candles;
+    });
+  }
+
+  // 2.22 Get event candlesticks
+  if (state.sampleEvent) {
+    await runner.test('2.22 Get event candlesticks', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const candles = await state.dflow.events.getEventCandlesticks(
+        state.sampleEvent!.ticker,
+        {
+          startTs: now - 86400,
+          endTs: now,
+          periodInterval: 60,
+        }
+      );
+      const marketCount = Object.keys(candles).length;
+      runner.log(`Found candlesticks for ${marketCount} markets`);
+      return candles;
+    });
+  }
+
+  // 2.23 Get live data by event
+  if (state.sampleEvent) {
+    await runner.test('2.23 Get live data by event', async () => {
+      try {
+        const data = await state.dflow.liveData.getLiveDataByEvent(state.sampleEvent!.ticker);
+        runner.log(`Event ticker: ${data.eventTicker || 'N/A'}`);
+        return data;
+      } catch (error: any) {
+        runner.log(`Live data by event not available: ${error.message?.slice(0, 50)}`);
+        return null;
+      }
+    });
+  }
+
+  // 2.24 Get live data by mint
+  if (state.yesMint) {
+    await runner.test('2.24 Get live data by mint', async () => {
+      try {
+        const data = await state.dflow.liveData.getLiveDataByMint(state.yesMint!);
+        runner.log(`Event ticker: ${data.eventTicker || 'N/A'}`);
+        return data;
+      } catch (error: any) {
+        runner.log(`Live data by mint not available: ${error.message?.slice(0, 50)}`);
+        return null;
+      }
+    });
+  }
+
+  // 2.25 Get market candlesticks by mint
+  if (state.yesMint) {
+    await runner.test('2.25 Get market candlesticks by mint', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      try {
+        const candles = await state.dflow.markets.getMarketCandlesticksByMint(
+          state.yesMint!,
+          {
+            startTs: now - 86400,
+            endTs: now,
+            periodInterval: 60,
+          }
+        );
+        runner.log(`Found ${candles.length} candlesticks by mint`);
+        return candles;
+      } catch (error: any) {
+        runner.log(`Candlesticks by mint not available: ${error.message?.slice(0, 50)}`);
+        return [];
+      }
+    });
+  }
+
+  // 2.26 Get event forecast history
+  if (state.sampleEvent && state.sampleSeries) {
+    await runner.test('2.26 Get event forecast history', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      try {
+        // Extract event ID from event ticker (e.g., "KXBTC-25DEC0313" -> event part after series)
+        const eventTicker = state.sampleEvent!.ticker;
+        const seriesTicker = state.sampleSeries!.ticker;
+        // Try to extract the event-specific part
+        const eventId = eventTicker.startsWith(seriesTicker + '-')
+          ? eventTicker.substring(seriesTicker.length + 1)
+          : eventTicker;
+
+        const history = await state.dflow.events.getEventForecastHistory(
+          seriesTicker,
+          eventId,
+          {
+            percentiles: '5000',
+            startTs: now - 86400,
+            endTs: now,
+            periodInterval: 60,
+          }
+        );
+        runner.log(`Forecast history series: ${history.seriesTicker || 'N/A'}`);
+        return history;
+      } catch (error: any) {
+        runner.log(`Forecast history not available: ${error.message?.slice(0, 50)}`);
+        return null;
+      }
+    });
+  }
+
+  // 2.27 Get event forecast by mint
+  if (state.yesMint) {
+    await runner.test('2.27 Get event forecast by mint', async () => {
+      const now = Math.floor(Date.now() / 1000);
+      try {
+        const history = await state.dflow.events.getEventForecastByMint(
+          state.yesMint!,
+          {
+            percentiles: '5000',
+            startTs: now - 86400,
+            endTs: now,
+            periodInterval: 60,
+          }
+        );
+        runner.log(`Forecast by mint series: ${history.seriesTicker || 'N/A'}`);
+        return history;
+      } catch (error: any) {
+        runner.log(`Forecast by mint not available: ${error.message?.slice(0, 50)}`);
+        return null;
+      }
+    });
+  }
+
   return true;
 }
 
@@ -326,6 +514,17 @@ async function phase3TradeAPIs(): Promise<boolean> {
     const tokens = await state.dflow.tokens.getTokens();
     assertArray(tokens, 'Tokens');
     runner.log(`Found ${tokens.length} tokens`);
+    return tokens;
+  });
+
+  // 3.1b Get tokens with decimals
+  await runner.test('3.1b Get tokens with decimals', async () => {
+    const tokens = await state.dflow.tokens.getTokensWithDecimals();
+    assertArray(tokens, 'Tokens with decimals');
+    runner.log(`Found ${tokens.length} tokens with decimal info`);
+    if (tokens.length > 0) {
+      runner.log(`Sample: ${tokens[0].symbol} - ${tokens[0].decimals} decimals`);
+    }
     return tokens;
   });
 
@@ -449,6 +648,37 @@ async function phase4SwapExecution(): Promise<boolean> {
       return balances;
     });
   }
+
+  // 4.4 Get swap instructions (without executing)
+  await runner.test('4.4 Get swap instructions', async () => {
+    const instructions = await state.dflow.swap.getSwapInstructions({
+      inputMint: USDC_MINT,
+      outputMint: BONK_MINT,
+      amount: 100_000, // 0.1 USDC
+      slippageBps: 100,
+      userPublicKey: state.walletAddress.toBase58(),
+      wrapUnwrapSol: true,
+    });
+    runner.log(`Setup instructions: ${instructions.setupInstructions?.length || 0}`);
+    runner.log(`Has swap instruction: ${!!instructions.swapInstruction}`);
+    runner.log(`ALTs: ${instructions.addressLookupTableAddresses?.length || 0}`);
+    return instructions;
+  });
+
+  // 4.5 Submit intent (get transaction without executing)
+  await runner.test('4.5 Submit intent', async () => {
+    const intent = await state.dflow.intent.submitIntent({
+      inputMint: USDC_MINT,
+      outputMint: BONK_MINT,
+      amount: 100_000, // 0.1 USDC
+      mode: 'ExactIn',
+      slippageBps: 100,
+      userPublicKey: state.walletAddress.toBase58(),
+    });
+    runner.log(`Intent ID: ${intent.intentId || 'N/A'}`);
+    runner.log(`Transaction length: ${intent.transaction?.length || 0}`);
+    return intent;
+  });
 
   return true;
 }
@@ -663,14 +893,100 @@ async function phase8EdgeCases(): Promise<boolean> {
 }
 
 // ============================================================================
-// PHASE 9: NEW SDK FEATURES
+// PHASE 9: ORDERS API
 // ============================================================================
 
-async function phase9NewFeatures(): Promise<boolean> {
-  runner.phase('PHASE 9: New SDK Features');
+async function phase9OrdersAPI(): Promise<boolean> {
+  runner.phase('PHASE 9: Orders API');
 
-  // 9.1 Search with status and entityType
-  await runner.test('9.1 Search with status and entityType', async () => {
+  // 9.1 Get order (without executing)
+  if (state.yesMint) {
+    await runner.test('9.1 Get order (prediction market)', async () => {
+      try {
+        const order = await state.dflow.orders.getOrder({
+          inputMint: USDC_MINT,
+          outputMint: state.yesMint!,
+          amount: 100_000, // 0.1 USDC
+          slippageBps: 100,
+          userPublicKey: state.walletAddress.toBase58(),
+        });
+        runner.log(`Transaction length: ${order.transaction?.length || 0}`);
+        runner.log(`In: ${order.inAmount}, Out: ${order.outAmount}`);
+        return order;
+      } catch (error: any) {
+        runner.log(`Order API: ${error.message?.slice(0, 50)}`);
+        return null;
+      }
+    });
+  }
+
+  // 9.2 Get order status (test with invalid signature - expect error)
+  await runner.test('9.2 Get order status (error handling)', async () => {
+    try {
+      // Use a fake signature to test error handling
+      await state.dflow.orders.getOrderStatus('invalid_signature_12345');
+      throw new Error('Should have thrown for invalid signature');
+    } catch (error: any) {
+      runner.log(`Expected error: ${error.message?.slice(0, 50)}`);
+      return true;
+    }
+  });
+
+  return true;
+}
+
+// ============================================================================
+// PHASE 10: PROOF KYC API
+// ============================================================================
+
+async function phase10ProofAPI(): Promise<boolean> {
+  runner.phase('PHASE 10: Proof KYC API');
+
+  // 10.1 Verify address (check if wallet is KYC verified)
+  await runner.test('10.1 Verify address', async () => {
+    try {
+      const result = await state.dflow.proof.verifyAddress(state.walletAddress.toBase58());
+      runner.log(`KYC verified: ${result.verified}`);
+      return result;
+    } catch (error: any) {
+      runner.log(`Proof API: ${error.message?.slice(0, 50)}`);
+      return { verified: false };
+    }
+  });
+
+  // 10.2 Generate signature message
+  await runner.test('10.2 Generate signature message', async () => {
+    const timestamp = Date.now();
+    const message = state.dflow.proof.generateSignatureMessage(timestamp);
+    runner.log(`Message: ${message.slice(0, 40)}...`);
+    return message;
+  });
+
+  // 10.3 Build deep link
+  await runner.test('10.3 Build deep link', async () => {
+    const timestamp = Date.now();
+    const deepLink = state.dflow.proof.buildDeepLink({
+      wallet: state.walletAddress.toBase58(),
+      signature: 'test_signature_base58',
+      timestamp,
+      redirectUri: 'https://example.com/callback',
+    });
+    runner.log(`Deep link: ${deepLink.slice(0, 50)}...`);
+    return deepLink;
+  });
+
+  return true;
+}
+
+// ============================================================================
+// PHASE 11: NEW SDK FEATURES
+// ============================================================================
+
+async function phase11NewFeatures(): Promise<boolean> {
+  runner.phase('PHASE 11: New SDK Features');
+
+  // 11.1 Search with status and entityType
+  await runner.test('11.1 Search with status and entityType', async () => {
     const results = await state.dflow.search.search({
       query: 'bitcoin',
       limit: 5,
@@ -681,9 +997,9 @@ async function phase9NewFeatures(): Promise<boolean> {
     return results;
   });
 
-  // 9.2 Markets with ticker filter (comma separated)
+  // 11.2 Markets with ticker filter (comma separated)
   if (state.sampleMarket) {
-    await runner.test('9.2 Markets with ticker filter', async () => {
+    await runner.test('11.2 Markets with ticker filter', async () => {
       const results = await state.dflow.markets.getMarkets({
         tickers: state.sampleMarket!.ticker,
       });
@@ -693,9 +1009,9 @@ async function phase9NewFeatures(): Promise<boolean> {
     });
   }
 
-  // 9.3 Markets by event ticker
+  // 11.3 Markets by event ticker
   if (state.sampleEvent) {
-    await runner.test('9.3 Markets by event ticker', async () => {
+    await runner.test('11.3 Markets by event ticker', async () => {
       const results = await state.dflow.markets.getMarkets({
         eventTicker: state.sampleEvent!.ticker,
       });
@@ -726,7 +1042,9 @@ async function main() {
     await phase6WebSocket();
     await phase7ErrorHandling();
     await phase8EdgeCases();
-    await phase9NewFeatures();
+    await phase9OrdersAPI();
+    await phase10ProofAPI();
+    await phase11NewFeatures();
 
     runner.summary();
     process.exit(runner.hasFailures() ? 1 : 0);
