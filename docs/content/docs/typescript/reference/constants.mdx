@@ -91,6 +91,24 @@ These constants are deprecated and will be removed in a future version:
 | `MAX_BATCH_SIZE` | `100` | Maximum items in batch requests |
 | `MAX_FILTER_ADDRESSES` | `200` | Maximum addresses in filter requests |
 
+## Proof KYC Constants
+
+Constants for the Proof KYC verification service:
+
+```typescript
+import {
+  PROOF_API_BASE_URL,
+  PROOF_DEEP_LINK_BASE_URL,
+  PROOF_SIGNATURE_MESSAGE_PREFIX,
+} from 'dflow-sdk';
+```
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PROOF_API_BASE_URL` | `https://proof.dflow.net` | Base URL for the Proof verification API |
+| `PROOF_DEEP_LINK_BASE_URL` | `https://dflow.net/proof` | Base URL for KYC deep links |
+| `PROOF_SIGNATURE_MESSAGE_PREFIX` | `Proof KYC verification: ` | Prefix for signature messages |
+
 ## Usage Examples
 
 ### Using Development Environment (Default)

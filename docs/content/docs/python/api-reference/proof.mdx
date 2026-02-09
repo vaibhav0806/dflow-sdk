@@ -1,0 +1,189 @@
+---
+title: Proof API
+description: KYC verification for DFlow prediction markets
+---
+
+# Proof API
+
+The Proof API provides KYC (Know Your Customer) verification functionality for DFlow prediction markets. Use this API to check if a wallet address has completed verification, generate signature messages for wallet ownership proof, and build deep links for partner integration.
+
+## Access
+
+```python
+from dflow import DFlowClient
+
+client = DFlowClient()
+proof_api = client.proof
+```
+
+## Methods
+
+### verify_address
+
+Check if a wallet address has completed KYC verification.
+
+```python
+def verify_address(address: str) -> VerifyAddressResponse
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `address` | `str` | Solana wallet address to check |
+
+#### Example
+
+```python
+result = client.proof.verify_address(
+    "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+)
+
+if result.verified:
+    print("User is verified!")
+else:
+    print("User needs to complete KYC")
+```
+
+### generate_signature_message
+
+Generate the message to be signed for KYC verification.
+
+The user should sign this message with their wallet to prove ownership. The signature is then used in the deep link for verification.
+
+```python
+def generate_signature_message(timestamp: int | None = None) -> str
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `timestamp` | `int \| None` | Unix timestamp in milliseconds. If not provided, uses current time. |
+
+#### Example
+
+```python
+import time
+
+timestamp = int(time.time() * 1000)
+message = client.proof.generate_signature_message(timestamp)
+print(message)  # "Proof KYC verification: 1699123456789"
+
+# Now sign this message with the user's wallet
+```
+
+### build_deep_link
+
+Build a deep link URL for the Proof KYC verification flow.
+
+Partners can use this to redirect users to complete KYC verification. After verification, users are redirected to the specified redirect_uri.
+
+```python
+def build_deep_link(params: DeepLinkParams) -> str
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `params` | `DeepLinkParams` | Deep link parameters (see below) |
+
+#### DeepLinkParams
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `wallet` | `str` | Yes | Solana wallet address to verify |
+| `signature` | `str` | Yes | Base58 encoded signature proving wallet ownership |
+| `timestamp` | `int` | Yes | Unix timestamp in milliseconds when the signature was created |
+| `redirect_uri` | `str` | Yes | URL to redirect to after verification completes |
+| `project_id` | `str \| None` | No | Optional partner project identifier |
+
+#### Example
+
+```python
+from dflow.types import DeepLinkParams
+
+link = client.proof.build_deep_link(DeepLinkParams(
+    wallet="7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    signature="base58_signature_here",
+    timestamp=1699123456789,
+    redirect_uri="https://myapp.com/verification-complete",
+    project_id="my-dapp"
+))
+
+print(link)
+# https://dflow.net/proof?wallet=7xKXtg...&signature=...&timestamp=...&redirect_uri=...
+```
+
+## Types
+
+### VerifyAddressResponse
+
+```python
+class VerifyAddressResponse(BaseModel):
+    verified: bool  # Whether the address has been verified
+```
+
+### DeepLinkParams
+
+```python
+class DeepLinkParams(BaseModel):
+    wallet: str           # Solana wallet address to verify
+    signature: str        # Base58 encoded signature
+    timestamp: int        # Unix timestamp in milliseconds
+    redirect_uri: str     # Redirect URL after verification
+    project_id: str | None = None  # Optional project identifier
+```
+
+## Complete Integration Example
+
+Here's a complete example of integrating Proof KYC verification:
+
+```python
+import time
+from dflow import DFlowClient
+from dflow.types import DeepLinkParams
+
+client = DFlowClient()
+
+# Step 1: Check if user is already verified
+wallet_address = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+result = client.proof.verify_address(wallet_address)
+
+if result.verified:
+    print("User is already verified! Proceed with trading.")
+else:
+    print("User needs to complete KYC verification.")
+
+    # Step 2: Generate signature message
+    timestamp = int(time.time() * 1000)
+    message = client.proof.generate_signature_message(timestamp)
+    print(f"Ask user to sign: {message}")
+
+    # Step 3: After user signs, build deep link
+    # In a real app, get the signature from the wallet
+    user_signature = "user_wallet_signature_base58"
+
+    deep_link = client.proof.build_deep_link(DeepLinkParams(
+        wallet=wallet_address,
+        signature=user_signature,
+        timestamp=timestamp,
+        redirect_uri="https://myapp.com/kyc-complete",
+        project_id="my-trading-app"
+    ))
+
+    print(f"Redirect user to: {deep_link}")
+```
+
+## Constants
+
+The SDK exports Proof-related constants:
+
+```python
+from dflow import (
+    PROOF_API_BASE_URL,           # https://proof.dflow.net
+    PROOF_DEEP_LINK_BASE_URL,     # https://dflow.net/proof
+    PROOF_SIGNATURE_MESSAGE_PREFIX # "Proof KYC verification: "
+)
+```

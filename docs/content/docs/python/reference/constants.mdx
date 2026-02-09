@@ -77,6 +77,27 @@ print(MAX_BATCH_SIZE)  # 100
 print(MAX_FILTER_ADDRESSES)  # 200
 ```
 
+## Proof KYC Constants
+
+```python
+from dflow import (
+    PROOF_API_BASE_URL,
+    PROOF_DEEP_LINK_BASE_URL,
+    PROOF_SIGNATURE_MESSAGE_PREFIX
+)
+
+# Proof API endpoints
+print(PROOF_API_BASE_URL)            # https://proof.dflow.net
+print(PROOF_DEEP_LINK_BASE_URL)      # https://dflow.net/proof
+print(PROOF_SIGNATURE_MESSAGE_PREFIX) # Proof KYC verification:
+```
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `PROOF_API_BASE_URL` | `https://proof.dflow.net` | Base URL for the Proof verification API |
+| `PROOF_DEEP_LINK_BASE_URL` | `https://dflow.net/proof` | Base URL for KYC deep links |
+| `PROOF_SIGNATURE_MESSAGE_PREFIX` | `Proof KYC verification: ` | Prefix for signature messages |
+
 ## Usage Example
 
 ```python
