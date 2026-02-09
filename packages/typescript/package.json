@@ -27,7 +27,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "test": "tsx test/live-api-test.ts",
-    "test:e2e": "tsx test/e2e-test.ts"
+    "test:e2e": "tsx test/e2e-test.ts",
+    "test:proof": "tsx test/proof-test.ts"
   },
   "keywords": [
     "dflow",
