@@ -1,10 +1,11 @@
 """Type definitions for DFlow SDK."""
 
 from .common import (
-    OHLCV,
+    Candlestick,
     CandlestickParams,
     CandlestickPeriodInterval,
     MarketCandlestick,
+    OHLCV,
     PaginatedResponse,
     PaginationParams,
     PriceOHLCV,
@@ -94,6 +95,7 @@ from .trades import (
     TradesResponse,
 )
 from .venues import Venue
+from .proof import DeepLinkParams, VerifyAddressResponse
 from .websocket import (
     OrderbookUpdate,
     PriceLevel,
@@ -211,4 +213,7 @@ __all__ = [
     "TradeUpdate",
     "OrderbookUpdate",
     "WebSocketUpdate",
+    # Proof
+    "VerifyAddressResponse",
+    "DeepLinkParams",
 ]

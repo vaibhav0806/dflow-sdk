@@ -21,11 +21,13 @@ from dflow.api.trade import (
     TokensAPI,
     VenuesAPI,
 )
+from dflow.api.proof import ProofAPI
 from dflow.utils.constants import (
     METADATA_API_BASE_URL,
     PROD_METADATA_API_BASE_URL,
     PROD_TRADE_API_BASE_URL,
     PROD_WEBSOCKET_URL,
+    PROOF_API_BASE_URL,
     TRADE_API_BASE_URL,
     WEBSOCKET_URL,
 )
@@ -79,6 +81,7 @@ class DFlowClient:
         prediction_market: API for prediction market initialization (requires API key)
         tokens: API for token information
         venues: API for trading venue information
+        proof: API for Proof KYC verification status and deep link generation
         ws: WebSocket client for real-time price, trade, and orderbook updates
     """
 
@@ -114,6 +117,7 @@ class DFlowClient:
 
         self._metadata_http = HttpClient(metadata_url, api_key)
         self._trade_http = HttpClient(trade_url, api_key)
+        self._proof_http = HttpClient(PROOF_API_BASE_URL, api_key)
 
         # Metadata APIs
         self.events = EventsAPI(self._metadata_http)
@@ -133,6 +137,9 @@ class DFlowClient:
         self.prediction_market = PredictionMarketAPI(self._trade_http)
         self.tokens = TokensAPI(self._trade_http)
         self.venues = VenuesAPI(self._trade_http)
+
+        # Proof API
+        self.proof = ProofAPI(self._proof_http)
 
         # WebSocket
         self.ws = DFlowWebSocket(url=websocket_url)
@@ -159,6 +166,7 @@ class DFlowClient:
         """
         self._metadata_http.set_api_key(api_key)
         self._trade_http.set_api_key(api_key)
+        self._proof_http.set_api_key(api_key)
 
     def close(self) -> None:
         """Close all connections.
@@ -167,6 +175,7 @@ class DFlowClient:
         """
         self._metadata_http.close()
         self._trade_http.close()
+        self._proof_http.close()
         self.ws.disconnect()
 
     def __enter__(self) -> "DFlowClient":

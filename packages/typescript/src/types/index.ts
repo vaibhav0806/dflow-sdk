@@ -12,3 +12,4 @@ export * from './search.js';
 export * from './solana.js';
 export * from './tokens.js';
 export * from './venues.js';
+export * from './proof.js';

@@ -23,6 +23,8 @@ export {
   VenuesAPI,
 } from './api/trade/index.js';
 
+export { ProofAPI } from './api/proof.js';
+
 export {
   signAndSendTransaction,
   waitForConfirmation,
@@ -60,6 +62,9 @@ export {
   PROD_METADATA_API_BASE_URL,
   PROD_TRADE_API_BASE_URL,
   PROD_WEBSOCKET_URL,
+  PROOF_API_BASE_URL,
+  PROOF_DEEP_LINK_BASE_URL,
+  PROOF_SIGNATURE_MESSAGE_PREFIX,
   USDC_MINT,
   SOL_MINT,
   DEFAULT_SLIPPAGE_BPS,

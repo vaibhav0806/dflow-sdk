@@ -92,3 +92,25 @@ export const MAX_BATCH_SIZE = 100;
  * Maximum number of addresses for filterOutcomeMints.
  */
 export const MAX_FILTER_ADDRESSES = 200;
+
+// ============================================================================
+// Proof KYC API
+// ============================================================================
+
+/**
+ * Proof KYC API base URL.
+ * Used for wallet verification status checks.
+ */
+export const PROOF_API_BASE_URL = 'https://proof.dflow.net';
+
+/**
+ * Proof KYC deep link base URL.
+ * Used for generating verification links for partners.
+ */
+export const PROOF_DEEP_LINK_BASE_URL = 'https://dflow.net/proof';
+
+/**
+ * Proof signature message prefix.
+ * Full message format: "Proof KYC verification: {timestamp_ms}"
+ */
+export const PROOF_SIGNATURE_MESSAGE_PREFIX = 'Proof KYC verification: ';

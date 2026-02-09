@@ -19,6 +19,7 @@ from .trade import (
     TokensAPI,
     VenuesAPI,
 )
+from .proof import ProofAPI
 
 __all__ = [
     # Metadata APIs
@@ -38,4 +39,6 @@ __all__ = [
     "PredictionMarketAPI",
     "TokensAPI",
     "VenuesAPI",
+    # Proof API
+    "ProofAPI",
 ]

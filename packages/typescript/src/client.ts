@@ -6,6 +6,7 @@ import {
   PROD_TRADE_API_BASE_URL,
   WEBSOCKET_URL,
   PROD_WEBSOCKET_URL,
+  PROOF_API_BASE_URL,
 } from './utils/constants.js';
 
 import {
@@ -28,6 +29,8 @@ import {
   TokensAPI,
   VenuesAPI,
 } from './api/trade/index.js';
+
+import { ProofAPI } from './api/proof.js';
 
 import { DFlowWebSocket } from './websocket/client.js';
 
@@ -90,6 +93,7 @@ export interface DFlowClientOptions {
 export class DFlowClient {
   private metadataHttp: HttpClient;
   private tradeHttp: HttpClient;
+  private proofHttp: HttpClient;
 
   /** API for discovering and querying prediction events */
   public readonly events: EventsAPI;
@@ -123,6 +127,9 @@ export class DFlowClient {
   /** API for trading venue information */
   public readonly venues: VenuesAPI;
 
+  /** API for Proof KYC verification status and deep link generation */
+  public readonly proof: ProofAPI;
+
   /** WebSocket client for real-time price, trade, and orderbook updates */
   public readonly ws: DFlowWebSocket;
 
@@ -150,6 +157,11 @@ export class DFlowClient {
       apiKey: options?.apiKey,
     });
 
+    this.proofHttp = new HttpClient({
+      baseUrl: PROOF_API_BASE_URL,
+      apiKey: options?.apiKey,
+    });
+
     this.events = new EventsAPI(this.metadataHttp);
     this.markets = new MarketsAPI(this.metadataHttp);
     this.orderbook = new OrderbookAPI(this.metadataHttp);
@@ -166,6 +178,8 @@ export class DFlowClient {
     this.predictionMarket = new PredictionMarketAPI(this.tradeHttp);
     this.tokens = new TokensAPI(this.tradeHttp);
     this.venues = new VenuesAPI(this.tradeHttp);
+
+    this.proof = new ProofAPI(this.proofHttp);
 
     this.ws = new DFlowWebSocket({ ...options?.wsOptions, url: options?.wsOptions?.url ?? wsUrl });
   }
@@ -193,5 +207,6 @@ export class DFlowClient {
   setApiKey(apiKey: string): void {
     this.metadataHttp.setApiKey(apiKey);
     this.tradeHttp.setApiKey(apiKey);
+    this.proofHttp.setApiKey(apiKey);
   }
 }

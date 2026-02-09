@@ -61,3 +61,19 @@ MAX_BATCH_SIZE = 100
 
 # Maximum number of addresses for filter_outcome_mints.
 MAX_FILTER_ADDRESSES = 200
+
+# ============================================================================
+# Proof KYC API
+# ============================================================================
+
+# Proof KYC API base URL.
+# Used for wallet verification status checks.
+PROOF_API_BASE_URL = "https://proof.dflow.net"
+
+# Proof KYC deep link base URL.
+# Used for generating verification links for partners.
+PROOF_DEEP_LINK_BASE_URL = "https://dflow.net/proof"
+
+# Proof signature message prefix.
+# Full message format: "Proof KYC verification: {timestamp_ms}"
+PROOF_SIGNATURE_MESSAGE_PREFIX = "Proof KYC verification: "

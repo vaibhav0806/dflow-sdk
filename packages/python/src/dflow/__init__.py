@@ -32,6 +32,7 @@ from dflow.api import (
     OrderbookAPI,
     OrdersAPI,
     PredictionMarketAPI,
+    ProofAPI,
     SearchAPI,
     SeriesAPI,
     SportsAPI,
@@ -58,6 +59,7 @@ from dflow.solana import (
 # Types - export the most commonly used ones
 from dflow.types import (
     Candlestick,
+    DeepLinkParams,
     Event,
     EventsResponse,
     ForecastHistory,
@@ -89,6 +91,7 @@ from dflow.types import (
     TransactionConfirmation,
     UserPosition,
     Venue,
+    VerifyAddressResponse,
     WebSocketOptions,
 )
 
@@ -102,6 +105,9 @@ from dflow.utils import (
     PROD_METADATA_API_BASE_URL,
     PROD_TRADE_API_BASE_URL,
     PROD_WEBSOCKET_URL,
+    PROOF_API_BASE_URL,
+    PROOF_DEEP_LINK_BASE_URL,
+    PROOF_SIGNATURE_MESSAGE_PREFIX,
     SOL_MINT,
     TRADE_API_BASE_URL,
     USDC_MINT,
@@ -144,6 +150,7 @@ __all__ = [
     "PredictionMarketAPI",
     "TokensAPI",
     "VenuesAPI",
+    "ProofAPI",
     # WebSocket
     "DFlowWebSocket",
     # Solana utilities
@@ -182,6 +189,9 @@ __all__ = [
     "OUTCOME_TOKEN_DECIMALS",
     "MAX_BATCH_SIZE",
     "MAX_FILTER_ADDRESSES",
+    "PROOF_API_BASE_URL",
+    "PROOF_DEEP_LINK_BASE_URL",
+    "PROOF_SIGNATURE_MESSAGE_PREFIX",
     # Types
     "Candlestick",
     "Event",
@@ -215,5 +225,7 @@ __all__ = [
     "TransactionConfirmation",
     "UserPosition",
     "Venue",
+    "VerifyAddressResponse",
+    "DeepLinkParams",
     "WebSocketOptions",
 ]
